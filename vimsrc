@@ -1,4 +1,6 @@
 #!/bin/bash
+# Checks /usr/include for the given file, opening it with vim -R if it
+# exists
 
 if [ -z "$1" ]; then
     progname=$(basename $0)
