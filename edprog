@@ -1,4 +1,6 @@
 #!/bin/bash
+# A program to open up a program from ~/bin for editing in vim
+# File must already exist
 
 prog="$HOME/bin/$1"
 
@@ -8,5 +10,5 @@ if [ -e "$prog" ]; then
     exit 0
 fi
 
-echo "Cannot edit $prog"
+echo "Cannot edit $prog: file does not exist"
 exit 1
