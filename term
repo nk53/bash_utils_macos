@@ -1,0 +1,9 @@
+#!/bin/bash
+
+cmd="open -a /Applications/Utilities/Terminal.app"
+
+if [ -n "$1" ]; then
+    $cmd $1 &
+else
+    $cmd . &
+fi

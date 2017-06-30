@@ -1,0 +1,12 @@
+#!/bin/bash
+
+prog="$HOME/bin/$1"
+
+echo "Attempting to edit $prog ..."
+if [ -e "$prog" ]; then
+    vim $prog
+    exit 0
+fi
+
+echo "Cannot edit $prog"
+exit 1
