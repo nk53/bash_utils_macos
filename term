@@ -1,4 +1,6 @@
 #!/bin/bash
+# opens a new Mac Terminal at the given location, or in the current
+# directory if no location is given
 
 cmd="open -a /Applications/Utilities/Terminal.app"
 
