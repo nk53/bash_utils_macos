@@ -1,6 +1,8 @@
 #!/bin/bash
 # opens a new Mac Terminal at the given location, or in the current
-# directory if no location is given
+# directory if no location is given. This is especially useful when used
+# from vim with the vim command "!term"
+
 
 cmd="open -a /Applications/Utilities/Terminal.app"
 
