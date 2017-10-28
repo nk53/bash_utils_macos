@@ -1,7 +1,8 @@
 Recommended installation procedure:
     $ git clone https://github.com/nk53/bash_utils_macos.git ~/bin
+    $ ~/bin/setup_bash_profile.sh
 
-Also, add the following to your Bash profile:
+This automatically adds the following to the end of your Bash profile:
     # ls colors
     export LSCOLORS=Exfxcxdxbxegedabagacad
     export CLICOLOR=1
