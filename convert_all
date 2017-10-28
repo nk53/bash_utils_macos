@@ -1,0 +1,24 @@
+#!/bin/bash
+# Use this to convert many A/V from one format to another
+
+avprog=ffmpeg
+
+usage=0
+if [ -z "$1" ]; then
+    usage=1
+elif [ -z "$2" ]; then
+    usage=1
+fi
+
+if [ $usage -eq 1 ]; then
+    progname=$(basename $0)
+    echo "Usage: $progname input_format output_format"
+    echo "Don't include a '.' in the format"
+    exit 1
+fi
+
+for old in *".$1"; do
+    new=${old%$1}$2
+    echo "Converting $old to $new"
+    $avprog -i $old $new
+done
