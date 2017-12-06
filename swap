@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [ $# -ne 2 ]; then
+    echo "Error: $0: Must have exactly two args"
+    exit 1
+fi
+
+tmpfile=$(mktemp)
+
+mv $1 $tmpfile
+mv $2 $1
+mv $tmpfile $2
