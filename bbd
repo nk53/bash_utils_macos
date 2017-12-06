@@ -1,0 +1,9 @@
+#!/bin/bash
+#
+# Binary dump using xxd
+#
+# Usage: bbd [OPTIONS] infile
+
+# TODO: finish this
+
+xxd -b -g0 $1
