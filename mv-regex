@@ -1,0 +1,7 @@
+#!/bin/bash
+
+cat ~/files | while read line; do
+    new_name=$(echo -n $line | sed 's/1/2/')
+    echo mv $line $new_name
+    mv $line $new_name
+done
