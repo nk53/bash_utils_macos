@@ -1,0 +1,11 @@
+#!/usr/bin/env python
+# Returns the largest float that occurs in the given file
+# File should contain only valid floats and white space
+from sys import argv
+
+infile = argv[1]
+
+import numpy as np
+numbers = np.loadtxt(infile)
+
+print numbers.max()

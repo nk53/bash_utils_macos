@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+import argparse
+from math import factorial as fact
+
+def n_choose_k(n, k):
+    n, k = map(float, (n, k))
+    return fact(n) / (fact(k) * fact(n - k))
+
+helpmsg = "Calculate something using the binomial probability distribution"
+parser = argparse.ArgumentParser(description=helpmsg)
+parser.add_argument('-k', type=int, metavar="num_success", required=True,
+    help="Exact number of successes")
+parser.add_argument('-n', type=int, metavar="num_trials", required=True,
+    help="Number of trials")
+parser.add_argument('-p', type=float, metavar="p_single", required=True,
+    help="Individual event's probability of success")
+
+args = parser.parse_args()
+
+binom_coeff = n_choose_k(args.n, args.k)
+
+prob = binom_coeff * args.p**args.k * (1-args.p)**(args.n-args.k)
+print "Probability of {} successes in {} trials: {}".format(
+    args.k, args.n, prob)

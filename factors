@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+# Given an integer, it returns all of its prime factors.
+# Given more than one integer, it returns all common prime factors
+#
+# This algorithm is pretty naive/inefficient. Don't use it with large
+# numbers.
+from sys import argv
+nums = map(int, argv[1:])
+
+# first get the factors of each number
+all_facts = [[i for i in range(1, num/2+1) if not num % i] for num in nums]
+
+# print each list of factors
+for facts, num in zip(all_facts, nums):
+    facts.append(num)
+    args = (num, ' '.join(map(str, facts)))
+    msg = "%d's factors are:\n%s" % args
+    print msg
+
+common_facts = []
+if len(nums) > 1:
+    # print factors common to all given numbers
+    for facts in all_facts:
+        for num in facts:
+            if num in common_facts:
+                continue
+            to_add = True
+            for f in all_facts:
+                if not num in f:
+                    to_add = False
+                    break
+            if to_add:
+                common_facts.append(num)
+
+print "Common factors:"
+print ' '.join(map(str, common_facts))

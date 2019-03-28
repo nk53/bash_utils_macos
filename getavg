@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+from sys import argv, stdin
+
+if len(argv) < 2:
+    infile = stdin
+else:
+    infile = open(argv[1])
+
+with infile as fh:
+    rows = [map(float, line.strip().split()) for line in fh]
+
+cols = zip(*rows)
+del rows
+sums = map(lambda col: str(sum(col) / len(col)), cols)
+
+print " ".join(sums)
