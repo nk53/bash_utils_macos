@@ -1,0 +1,18 @@
+#!/bin/bash
+
+if [ -z "$1" ]; then
+    echo "Usage: $0 file"
+    exit 1
+fi
+
+bakfile="$1.bak"
+if [ -e "$bakfile" ]; then
+    echo "$bakfile already exists"
+    read -p "Overwrite file? [y/N] " response
+    response=${response:0:1}
+    if [ "$response" == "n" ] || [ "$response" == "N" ]; then
+        exit 2
+    fi
+fi
+
+cp $1 $bakfile

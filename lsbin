@@ -1,3 +1,13 @@
 #!/bin/bash
+# Usage: lsbin [globbing_pattern]
+# without arguments, shows the whole contents of ~/bin. With an argument,
+# displays only the files that contain "globbing_pattern" somewhere in
+# their filename
 
-ls $HOME/bin
+cd $HOME/bin
+
+if [ -n "$1" ]; then
+    ls *$1*
+else
+    ls
+fi

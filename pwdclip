@@ -1,0 +1,10 @@
+#!/bin/bash
+# Copies the current directory to the clipboard
+
+pwd | pbcopy
+
+# remove trailing newline
+echo -n $(pbpaste) | pbcopy
+
+echo "Current Directory: $PWD"
+echo "Use cdclip to go to that directory"

@@ -1,0 +1,26 @@
+#!/bin/bash
+# checks a file periodically for changes, and shows the word count when
+# there are
+
+if [ -z "$1" ]; then
+    echo "Usage: $(basename $0) file [wait_time]" 
+fi
+
+if [ -z $wait_time ]; then
+    wait_time=10
+fi
+
+prev=""
+i=0
+while [ 1 ]; do
+    cur="$(wc $1)"
+    if [ "$cur" == "$prev" ]; then
+        ((i++))
+        echo -en "\r$prev ($i)"
+    else
+        i=0
+        prev="$cur"
+        echo -en "\n$cur"
+    fi
+    sleep $wait_time
+done

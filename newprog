@@ -1,0 +1,20 @@
+#!/bin/bash
+# Creates a new executable file, then opens it for editing
+# If the program already exists, then it is simply opened
+
+if [ -n "$1" ]; then
+    dest=$HOME/bin/$1
+    if [ ! -e $dest ]; then
+        echo "Creating $dest ..."
+        touch $dest
+        chmod +x $dest
+    else
+        echo "$dest already exists"
+    fi
+    edprog $1
+    exit 0
+fi
+
+pn=$(basename $0)
+echo "Usage: $pn new_program_name"
+exit 1

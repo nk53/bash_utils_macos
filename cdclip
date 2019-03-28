@@ -1,0 +1,11 @@
+# Goes to the location pointed at by the clipboard
+
+dest="$(pbpaste)"
+
+if [ ! -d "$dest" ]; then
+    echo Error: Destination is not a directory:
+    echo "${dest:0:76}"
+    exit 1
+fi
+
+cd "$dest"

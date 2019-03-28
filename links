@@ -1,0 +1,3 @@
+#!/bin/bash
+
+ls -l $1 | grep -oE "\w+ -> [^ ]+" --color=auto

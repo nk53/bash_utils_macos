@@ -1,0 +1,5 @@
+#!/bin/bash
+# creates an executable file 
+
+touch $1
+chmod +x $1

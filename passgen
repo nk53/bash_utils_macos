@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+# Generates a password of the given length; defaults to 16 chars
+# use -h or --help for detailed help info
+import argparse
+import string as s
+from random import shuffle
+from sys import argv
+
+punc = ".-&@!#$%*;?"
+helpmsg = "Creates a random password."
+
+parser = argparse.ArgumentParser(description=helpmsg)
+parser.add_argument('-n', '--no-punctuation', action="store_true",
+        help="disables all punctuation")
+parser.add_argument('-p', '--punctuation', type=str, nargs=1, default=punc,
+        metavar="allowed_chars", help="use a list of allowed characters"+\
+        " other than the default (%(default)s)")
+parser.add_argument('length', type=int, nargs='?', default=16,
+        help="number of characters to put in the password")
+
+# allowed characters for passwords
+args = parser.parse_args()
+if not args.no_punctuation:
+    allowed_chars = args.punctuation
+else:
+    allowed_chars = ""
+
+allowed_chars += s.ascii_letters + s.digits
+allowed_chars = list(allowed_chars)
+
+def get_pass(pass_length):
+    password = ""
+    for i in range(pass_length):
+        shuffle(allowed_chars)
+        password += allowed_chars[0]
+    return password
+
+print(get_pass(args.length))

@@ -1,0 +1,42 @@
+#!/bin/bash
+
+recursive=""
+while [ "true" ]; do
+    getopts "hr" opt
+    case "$opt" in
+        "h" ) echo "Usage: $0: [-hr] path"
+              echo -en "\n\tConverts all spaces in the given filename."
+              exit;;
+        "r" ) recursive="true"
+              break;;
+        "?" ) break;;
+    esac
+done
+
+args=$#
+if [ -n "$recursive" ]; then
+    echo "Files to be changed:"
+    for f in "${!args}"/*; do
+        echo $f
+        if [ -f "$f" ]; then
+            nf=$(echo $f | sed "s/ /_/g")
+            echo mv "$f" "$nf"
+        fi
+    done
+    echo -n "Press any key to continue, or Ctrl-C to abort... "
+    read response
+    for f in "${!args}"/*; do
+        echo $f
+        if [ -f "$f" ]; then
+            nf=$(echo $f | sed "s/ /_/g")
+            mv "$f" "$nf"
+        fi
+    done
+    exit
+else
+    f=${!args}
+    nf=$(echo $f | sed "s/ /_/g")
+    echo mv "$f" "$nf"
+    mv "$f" "$nf"
+fi
+
