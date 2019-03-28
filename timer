@@ -1,0 +1,129 @@
+#!/usr/bin/env python
+import argparse
+from subprocess import call
+import time
+
+default_message = "Time's up. Time's up. Do the thing!"
+canned_messages_obj = (
+    ("Get the fuck off the computer", ('-f', '--fuck')),
+    ("The bus is leaving soon, don't miss the bus", ('--bus',)),
+    ("Eat breakfast", ('-b', '--breakfast')),
+    ["Tea is done", ('--tea',)],
+    ["Go to class", ('--class',)],
+)
+# first column is the actual message
+canned_messages = zip(*canned_messages_obj)[0]
+
+# setup parser
+helpmsg = "Sets a timer, with an optional custom or canned message"
+parser = argparse.ArgumentParser(description=helpmsg)
+parser.add_argument('-m', type=str, metavar="message",
+    help="custom message to print instead of default")
+parser.add_argument('-r', '--repeat', action="store_true", 
+        help="repeat message on a loop, until killed")
+parser.add_argument('-t', action="store_true",
+        help="indicates 'time' is a clock time, not a duration")
+parser.add_argument('time', type=str, nargs='?',
+        help="number of seconds for timer, or (if -t is used), " + \
+             "clock time when timer expires")
+
+# canned message options
+canned_message_help="Show a canned message. Use 0 to show all messages."
+parser.add_argument('-c', type=int, metavar="canned_num",
+        help=canned_message_help)
+canned_message_all="Canned messages:\n"
+canned_attrs = []
+for ind, message_tup in enumerate(canned_messages_obj):
+    message, opts = message_tup
+    help_str = "canned message " + str(ind + 1)
+    canned_message_all += "\t{}: {}\n".format(ind+1, message)
+    parser.add_argument(*opts, action="store_true", help=help_str)
+    longest_opt = ''
+    for opt in opts:
+        if len(opt) > len(longest_opt):
+            longest_opt = opt
+    canned_attrs.append((ind, longest_opt.strip('-')))
+canned_message_all = canned_message_all[:-1]
+
+# run parser
+args = parser.parse_args()
+message = default_message
+
+# check canned message options
+for ind, attr in canned_attrs:
+    if args.__getattribute__(attr):
+        message = canned_messages[ind]
+if args.c != None:
+    if args.c == 0:
+        print canned_message_all
+        quit()
+    else:
+        message = canned_messages[args.c-1]
+
+# check for custom message
+if args.m != None:
+    message = args.m
+
+# unless user just wants a list of canned message opts, we need a time
+if args.time == None:
+    parser.print_usage()
+    quit()
+
+# parse time option
+nsecs = 0
+if args.t:
+    times = args.time.split(":")
+    try:
+        times = map(int, times)
+    except ValueError as e:
+        print "Error:", args.time, "is not a valid time"
+        quit()
+    now = time.localtime()
+    now_tup = list(now)
+    now_epoch = time.mktime(now)
+    # indices to struct_time that we want to modify
+    inds = [3, 4, 5][:len(times)]
+    for ind, value in zip(inds, times):
+        now_tup[ind] = value
+    dest_epoch = time.mktime(now_tup)
+
+    nsecs = dest_epoch - now_epoch
+    if nsecs < 0:
+        nsecs += 3600 * 12
+else:
+    if ":" in args.time:
+        times = args.time.split(":")
+        try:
+            times = map(int, times)
+        except ValueError as e:
+            print "Error:", args.time, "is not a valid time"
+            quit()
+        # deal with place values in increasing order
+        times.reverse()
+        # place value multiplier
+        multipliers = [1, 60, 60] # s, m, h
+        # we only want as many muls as needed
+        multipliers = multipliers[:len(times)]
+        mul = 1
+        for this_mul, value in zip(multipliers, times):
+            mul *= this_mul
+            nsecs += mul * value
+    else:
+        try:
+            nsecs = int(args.time)
+        except ValueError as e:
+            print "Error:", args.time, "is not a valid time"
+            quit()
+
+# run the actual timer
+print "Sleeping for", nsecs, "seconds ..."
+time.sleep(nsecs)
+
+# say the message using macOS's `say`
+if args.repeat:
+    # spam message until we get killed
+    while True:
+        call(["say", message])
+else:
+    # just say it once
+    call(["say", message])
