@@ -1,5 +1,0 @@
-#!/bin/bash
-
-OPTS="--silent -X GET"
-
-curl $OPTS $1
