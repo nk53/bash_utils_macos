@@ -7,6 +7,7 @@ fi
 
 tmpfile=$(mktemp)
 
-mv $1 $tmpfile
-mv $2 $1
-mv $tmpfile $2
+cp $1 $tmpfile
+cp $2 $1
+cp $tmpfile $2
+rm $tmpfile  # not sure it is really necessary to do it this way

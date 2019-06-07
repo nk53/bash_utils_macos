@@ -6,4 +6,4 @@
 
 # TODO: finish this
 
-xxd -b -g0 $1
+xxd -b -g0 $@
