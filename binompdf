@@ -8,17 +8,52 @@ def n_choose_k(n, k):
 
 helpmsg = "Calculate something using the binomial probability distribution"
 parser = argparse.ArgumentParser(description=helpmsg)
-parser.add_argument('-k', type=int, metavar="num_success", required=True,
+parser.add_argument('-i', '--invert', action='store_true',
+    help="Return (1 - p) instead of p")
+parser.add_argument('-k', type=int, metavar="num_success",
     help="Exact number of successes")
 parser.add_argument('-n', type=int, metavar="num_trials", required=True,
     help="Number of trials")
 parser.add_argument('-p', type=float, metavar="p_single", required=True,
     help="Individual event's probability of success")
 
+# cumulative options
+parser.add_argument('-c', action='store_true',
+    help="Compute comulative PDF (requires -a and/or -b)")
+parser.add_argument('-a', type=int, metavar="from_num",
+    help="Lower bound on cumulative PDF", default=0)
+parser.add_argument('-b', type=int, metavar="to_num",
+    help="Upper bound on cumulative PDF")
+
 args = parser.parse_args()
 
-binom_coeff = n_choose_k(args.n, args.k)
+if args.c:
+    if args.a == None and args.b == None:
+        print "Error: please specify -a or -b, or both"
+        quit()
+    prob = 0
+    low = args.a
+    if args.b != None:
+        high = args.b
+    else:
+        high = args.n
+    for i in range(low, high+1):
+        binom_coeff = n_choose_k(args.n, i)
+        prob += binom_coeff * args.p**i * (1-args.p)**(args.n-i)
+else:
+    if args.k == None:
+        print "Error: -k is required"
+        quit()
+    binom_coeff = n_choose_k(args.n, args.k)
+    prob = binom_coeff * args.p**args.k * (1-args.p)**(args.n-args.k)
 
-prob = binom_coeff * args.p**args.k * (1-args.p)**(args.n-args.k)
-print "Probability of {} successes in {} trials: {}".format(
-    args.k, args.n, prob)
+if args.k == None:
+    print "Probability of [{}, {}] successes in {} trials: {}".format(
+        low, high, args.n, prob)
+else:
+    print "Probability of {} successes in {} trials: {}".format(
+        args.k, args.n, prob)
+
+if args.invert:
+    print "Inverted:", 1 - prob
+
