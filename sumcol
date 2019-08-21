@@ -1,7 +1,7 @@
 #!/bin/bash
 # Returns the sum of a column
 if [ -z "$2" ]; then
-    echo "Usage: $0 filename col"
+    echo "Usage: $(basename $0) filename col"
     exit 1
 fi
 
