@@ -14,9 +14,24 @@ canned_messages_obj = (
 # first column is the actual message
 canned_messages = zip(*canned_messages_obj)[0]
 
+def format_time(nsecs):
+    template = "{:02.0f}:{:02.0f}:{:02.0f}"
+    # organize time as [hours, minutes, seconds] for display
+    nsecs_tot = nsecs
+    time_list = [0, 0, 0]
+    time_list[0] = int(nsecs / 3600)
+    nsecs = nsecs % 3600
+    time_list[1] = int(nsecs / 60)
+    nsecs = nsecs % 60
+    time_list[2] = nsecs
+
+    return template.format(*time_list)
+
 # setup parser
 helpmsg = "Sets a timer, with an optional custom or canned message"
 parser = argparse.ArgumentParser(description=helpmsg)
+parser.add_argument('-s', '--show-timer', action="store_true",
+        help="Whether to show the current time remaining")
 parser.add_argument('-m', type=str, metavar="message",
     help="custom message to print instead of default")
 parser.add_argument('-r', '--repeat', action="store_true", 
@@ -90,6 +105,9 @@ if args.t:
     nsecs = dest_epoch - now_epoch
     if nsecs < 0:
         nsecs += 3600 * 12
+    if nsecs < 0:
+        print "Warning: destination is a time tomorrow"
+        nsecs += 3600 * 12
 else:
     if ":" in args.time:
         times = args.time.split(":")
@@ -115,9 +133,23 @@ else:
             print "Error:", args.time, "is not a valid time"
             quit()
 
-# run the actual timer
-print "Sleeping for", nsecs, "seconds ..."
-time.sleep(nsecs)
+if args.show_timer:
+    from sys import stdout
+    now_time = time.time()
+    dst_time = now_time + nsecs
+    while True:
+        time_left = dst_time - time.time()
+        if time_left < 0:
+            break
+        print "Time left:", format_time(time_left), "(hh:mm:ss) ...     \r",
+        stdout.flush()
+        time.sleep(0.2)
+    print
+    print message
+else:
+    # run the actual timer
+    print "Sleeping for", format_time(nsecs), "(hh:mm:ss) ..."
+    time.sleep(nsecs)
 
 # say the message using macOS's `say`
 if args.repeat:
