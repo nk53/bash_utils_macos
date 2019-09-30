@@ -3,7 +3,7 @@
 if [ -z "$1" ]; then
     dirname="."
 else
-    dirname="$1"
+    dirname="$@"
 fi
 
 ls -t $dirname | head -n 1
