@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ -z "$1" ]; then
+    dirname="."
+else
+    dirname="$1"
+fi
+
+ls -t $dirname | head -n 1
+

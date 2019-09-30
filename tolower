@@ -1,0 +1,9 @@
+#!/usr/bin/env python
+from sys import argv, stdin
+
+if len(argv) > 1:
+    print " ".join(map(lambda s: s.lower(), argv[1:]))
+else:
+    with stdin:
+        for line in stdin:
+            print line.lower(),

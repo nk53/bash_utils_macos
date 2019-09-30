@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+# Returns the largest float that occurs in a given file's column
+from sys import argv
+
+infile = argv[1]
+col = int(argv[2])
+
+values = []
+with open(infile) as fh:
+    values = [line.strip().split()[col] for line in fh]
+
+if values:
+    print max(values)

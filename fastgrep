@@ -25,7 +25,8 @@ filter="$2"
 regexp="$3"
 
 find "$base" -name "$filter" | while read filename; do
-    results="$(grep -d skip -E "$regexp" $filename)"
+    # skip directories, and show line numbers
+    results="$(grep -n -d skip -E "$regexp" $filename)"
     if [ -n "$results" ]; then
         echo "$filename: $results"
     fi

@@ -1,0 +1,29 @@
+#!/usr/bin/env python3
+# Takes multi-line paragraphs and condenses them to one line each.
+
+import os, sys
+
+if len(sys.argv) == 1:
+    print("Warning, reading from stdin", file=sys.stderr)
+    infile = sys.stdin
+elif not os.path.isfile(sys.argv[1]):
+    print("Error: no such file:", sys.argv[1], file=sys.stderr)
+    sys.exit()
+else:
+    infile = open(sys.argv[1])
+
+paragraph = []
+try:
+    for line in infile:
+        line = line.strip()
+        if line:
+            paragraph.append(line)
+        else:
+            print(" ".join(paragraph))
+            paragraph = []
+except (EOFError, KeyboardInterrupt) as exc:
+    print()
+    sys.exit()
+
+if paragraph:
+    print(" ".join(paragraph))

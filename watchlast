@@ -1,0 +1,8 @@
+#!/bin/bash
+
+dir="."
+if [ -z "$1" ]; then
+    dir="$1"
+fi
+
+watch "tail $(ls -t $dir | head -n1)"
