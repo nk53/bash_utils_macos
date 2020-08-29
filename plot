@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 import numpy as np
 
 # just assume -p for now
@@ -55,7 +55,6 @@ for x in xs:
     expression = regex.sub(str(x), func)
     y = eval(expression)
     ys.append(y)
-
 
 import matplotlib.pyplot as plt
 plt.plot(xs, ys)

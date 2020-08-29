@@ -3,11 +3,12 @@
 # directory if no location is given. This is especially useful when used
 # from vim with the vim command "!term"
 
-
-cmd="open -a /Applications/Utilities/Terminal.app"
+cmd="open -a /System/Applications/Utilities/Terminal.app"
 
 if [ -n "$1" ]; then
-    $cmd $1 &
+    for path in $@; do
+        $cmd $path &
+    done
 else
     $cmd . &
 fi

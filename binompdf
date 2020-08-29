@@ -29,7 +29,7 @@ args = parser.parse_args()
 
 if args.c:
     if args.a == None and args.b == None:
-        print "Error: please specify -a or -b, or both"
+        print("Error: please specify -a or -b, or both")
         quit()
     prob = 0
     low = args.a
@@ -42,18 +42,18 @@ if args.c:
         prob += binom_coeff * args.p**i * (1-args.p)**(args.n-i)
 else:
     if args.k == None:
-        print "Error: -k is required"
+        print("Error: -k is required")
         quit()
     binom_coeff = n_choose_k(args.n, args.k)
     prob = binom_coeff * args.p**args.k * (1-args.p)**(args.n-args.k)
 
 if args.k == None:
-    print "Probability of [{}, {}] successes in {} trials: {}".format(
-        low, high, args.n, prob)
+    print("Probability of [{}, {}] successes in {} trials: {}".format(
+        low, high, args.n, prob))
 else:
-    print "Probability of {} successes in {} trials: {}".format(
-        args.k, args.n, prob)
+    print("Probability of {} successes in {} trials: {}".format(
+        args.k, args.n, prob))
 
 if args.invert:
-    print "Inverted:", 1 - prob
+    print("Inverted:", 1 - prob)
 

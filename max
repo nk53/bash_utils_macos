@@ -8,4 +8,4 @@ infile = argv[1]
 import numpy as np
 numbers = np.loadtxt(infile)
 
-print numbers.max()
+print(numbers.max())

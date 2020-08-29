@@ -5,9 +5,40 @@ if [ $# -ne 2 ]; then
     exit 1
 fi
 
-tmpfile=$(mktemp)
+# attempt to create a tempfile, and quit if it fails
+tmpfile=$(mktemp "$1".XXX)
+retval=$?
+if [ $retval -ne 0 ]; then
+    echo "Failed create temporary file, exiting" >&2
+    exit $retval
+fi
 
-cp $1 $tmpfile
-cp $2 $1
-cp $tmpfile $2
-rm $tmpfile  # not sure it is really necessary to do it this way
+# we actually only want the name, not the file
+# this is necessary for swap to work on files AND directories
+rm $tmpfile
+
+# attempt to rename $1 to the temporary name
+mv "$1" "$tmpfile"
+retval=$?
+if [ $retval -ne 0 ]; then
+    echo "Failed to move $1, exiting" >&2
+    exit $retval
+fi
+
+# rename $2
+mv "$2" "$1"
+retval=$?
+if [ $retval -ne 0 ]; then
+    echo "Failed to rename $2, exiting" >&2
+    exit $retval
+fi
+
+# rename $1 to $2 and remove temporary name from directory listing
+mv "$tmpfile" "$2"
+retval=$?
+
+if [ $retval -ne 0 ]; then
+    echo "Failed to rename $1, exiting" >&2
+    exit $retval
+fi
+

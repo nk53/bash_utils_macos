@@ -3,11 +3,15 @@
 from sys import argv
 
 infile = argv[1]
-col = int(argv[2])
+col_nums = list(map(int, argv[2:]))
 
-values = []
 with open(infile) as fh:
-    values = [line.strip().split()[col] for line in fh]
+    cols = [[]] * len(col_nums)
+    for line in fh:
+        line = line.strip().split()
+        for col_num, col in zip(col_nums, cols):
+            col.append(float(line[col_num-1]))
 
-if values:
-    print max(values)
+if cols:
+    maxes = [str(max(col)) for col in cols]
+    print(" ".join(maxes))

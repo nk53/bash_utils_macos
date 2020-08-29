@@ -8,6 +8,9 @@ if [ -n "$1" ]; then
         echo "Creating $dest ..."
         touch $dest
         chmod +x $dest
+        if [ -n "$2" ]; then
+            echo '#!'$2 > $dest
+        fi
     else
         echo "$dest already exists"
     fi

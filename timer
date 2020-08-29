@@ -10,9 +10,10 @@ canned_messages_obj = (
     ("Eat breakfast", ('-b', '--breakfast')),
     ["Tea is done", ('--tea',)],
     ["Go to class", ('--class',)],
+    ["Check laundry", ('--laundry',)],
 )
 # first column is the actual message
-canned_messages = zip(*canned_messages_obj)[0]
+canned_messages = tuple(zip(*canned_messages_obj))[0]
 
 def format_time(nsecs):
     template = "{:02.0f}:{:02.0f}:{:02.0f}"
@@ -70,8 +71,9 @@ for ind, attr in canned_attrs:
         message = canned_messages[ind]
 if args.c != None:
     if args.c == 0:
-        print canned_message_all
-        quit()
+        import sys
+        print(canned_message_all)
+        sys.exit(0)
     else:
         message = canned_messages[args.c-1]
 
@@ -82,17 +84,19 @@ if args.m != None:
 # unless user just wants a list of canned message opts, we need a time
 if args.time == None:
     parser.print_usage()
-    quit()
+    import sys
+    sys.exit(1)
 
 # parse time option
 nsecs = 0
 if args.t:
     times = args.time.split(":")
     try:
-        times = map(int, times)
+        times = list(map(int, times))
     except ValueError as e:
-        print "Error:", args.time, "is not a valid time"
-        quit()
+        print("Error:", args.time, "is not a valid time")
+        import sys
+        sys.exit(2)
     now = time.localtime()
     now_tup = list(now)
     now_epoch = time.mktime(now)
@@ -100,22 +104,24 @@ if args.t:
     inds = [3, 4, 5][:len(times)]
     for ind, value in zip(inds, times):
         now_tup[ind] = value
+    now_tup = tuple(now_tup)
     dest_epoch = time.mktime(now_tup)
 
     nsecs = dest_epoch - now_epoch
     if nsecs < 0:
         nsecs += 3600 * 12
     if nsecs < 0:
-        print "Warning: destination is a time tomorrow"
+        print("Warning: destination is a time tomorrow")
         nsecs += 3600 * 12
 else:
     if ":" in args.time:
-        times = args.time.split(":")
+        times = list(args.time.split(":"))
         try:
-            times = map(int, times)
+            times = list(map(int, times))
         except ValueError as e:
-            print "Error:", args.time, "is not a valid time"
-            quit()
+            print("Error:", args.time, "is not a valid time")
+            import sys
+            sys.exit(3)
         # deal with place values in increasing order
         times.reverse()
         # place value multiplier
@@ -130,8 +136,9 @@ else:
         try:
             nsecs = int(args.time)
         except ValueError as e:
-            print "Error:", args.time, "is not a valid time"
-            quit()
+            print("Error:", args.time, "is not a valid time")
+            import sys
+            sys.exit(4)
 
 if args.show_timer:
     from sys import stdout
@@ -141,14 +148,14 @@ if args.show_timer:
         time_left = dst_time - time.time()
         if time_left < 0:
             break
-        print "Time left:", format_time(time_left), "(hh:mm:ss) ...     \r",
+        print("Time left:", format_time(time_left), "(hh:mm:ss) ...     \r", end='')
         stdout.flush()
         time.sleep(0.2)
-    print
-    print message
+    print()
+    print(message)
 else:
     # run the actual timer
-    print "Sleeping for", format_time(nsecs), "(hh:mm:ss) ..."
+    print("Sleeping for", format_time(nsecs), "(hh:mm:ss) ...")
     time.sleep(nsecs)
 
 # say the message using macOS's `say`

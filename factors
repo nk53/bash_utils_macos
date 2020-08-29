@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # Given an integer, it returns all of its prime factors.
 # Given more than one integer, it returns all common prime factors
 #
