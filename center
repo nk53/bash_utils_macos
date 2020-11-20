@@ -1,0 +1,40 @@
+#!/bin/bash
+
+ARGS=$@
+
+# default to set args to base=$@
+if [[ -z "$2" ]] && [[ "${1:0:4}" != "base" ]]; then
+    ARGS="base=$@"
+fi
+
+charmm $ARGS << END
+* centers the polymer at the origin by mass
+*
+
+DIMENS CHSIZE 5000000 MAXRES 3000000
+
+! allow shorthand specification of file base
+if @?base eq 1 set psf = @{base}.psf
+if @?base eq 1 set crd = @{base}.crd
+if @?base eq 1 set out = @{base}_centered.crd
+
+if @?psf eq 0 stop ! missing PSF name (include .psf in filename)
+if @?crd eq 0 stop ! missing CRD name (include .crd in filename)
+if @?out eq 0 stop ! missing OUT name (include .crd in filename)
+
+if @?select eq 0 set select = all
+
+prnlev 0
+wrnlev 0
+stream toppar.str
+wrnlev 5
+prnlev 5
+
+read psf  card name @psf
+read coor card name @crd
+
+coor orient norotate select @select end
+
+write coor card name @out
+
+END

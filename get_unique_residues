@@ -1,0 +1,23 @@
+#!/bin/bash
+# A PDB parsing script that Jumin showed me
+#
+# Given an input PDB file and a segment ID, it will show the unique
+# residues in that segment
+
+if [ -z "$1" ]; then
+    echo "Usage: $0 pdb_file segid"
+    echo "    Shows the unique residues in a segment"
+    exit 1
+fi
+
+pdbfile=$1
+segid=$2
+
+# if user didn't specify a segment, restrict search to atoms
+
+if [ -z "$segid" ]; then
+    segid="ATOM"
+fi
+
+# PDB files' fields are delineated by character position
+grep -i $segid $pdbfile | cut -c 18-23 | sort -u
