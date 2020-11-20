@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+import argparse
+
+helpmsg = ''.join((
+    "Concatenate images along a specified dimension. ",
+    "If no dimensions are specified (-x/-y), then the first unequal ",
+    "dimension is used. If neither dimension has equal size, then ",
+    "the Y dimension is used."
+))
+parser = argparse.ArgumentParser(
+    description=helpmsg)
+parser.add_argument('-x', action="store_true", help="Concatenate along X")
+parser.add_argument('-y', action="store_true", help="Concatenate along Y")
+parser.add_argument('-m', '--mode', nargs=1, metavar='MODE')
+parser.add_argument('-b', '--border', nargs=2, metavar=('width', 'color'))
+parser.add_argument('-o', '--output', required=True, help="Name of concatenated output file")
+parser.add_argument('filename', nargs='+', help="Images to concatenate")
+
+args = parser.parse_args()
+
+img_mode = args.mode and args.mode[0]
+
+from PIL import Image
+import numpy as np
+
+images = []
+for filename in args.filename:
+    im = Image.open(filename)
+    if img_mode: im = im.convert(mode=img_mode)
+    else: img_mode = im.mode
+    im = np.asarray(im)
+    images.append(im)
+
+shape = images[0].shape
+equal = [True, True]
+for image in images[1:]:
+    # determine which dimensions match
+    for dim, s in enumerate(image.shape[:2]):
+        ed = equal[dim]
+        sd = shape[dim]
+        equal[dim] = ed and (sd == s)
+
+# if user chose a dimension, use it
+if args.x:
+    dim = 0
+elif args.y:
+    dim = 1
+# otherwise, choose the first equivalent dimension, or Y
+elif equal[1] and not equal[0]:
+    dim = 0
+else:
+    dim = 1
+
+if args.border:
+    width, color = args.border
+    width = int(width)
+    height = shape[abs(dim-1)]
+    border_shape = [height, width]
+    if dim: border_shape.reverse()
+    border = Image.new(img_mode, border_shape, color=color)
+    border = np.asarray(border)
+    for i in reversed(range(1, len(images))):
+        images.insert(i, border)
+
+# do the actual concatenation along the specified dimension
+output = np.concatenate(images, axis=dim)
+output = Image.fromarray(output)
+output.save(args.output)

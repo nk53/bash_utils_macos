@@ -1,0 +1,11 @@
+#!/usr/bin/env python3
+import json
+import sys
+
+usage = "Usage: {} jsonfile".format(sys.argv[0])
+assert len(sys.argv) == 2, usage
+
+with open(sys.argv[1]) as fh:
+    obj = json.load(fh)
+
+print(json.dumps(obj, sort_keys=True, indent=4))

@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+import argparse, os, shutil, sys
+
+def cache_tail(tail, fh):
+    output = ''.join(tail)
+    fh.seek(0)
+    fh.truncate()
+    fh.write(output)
+    fh.flush()
+    os.fsync(fh.fileno())
+
+helpmsg = "Maintains a cache of a growing file's tail."
+parser = argparse.ArgumentParser(description=helpmsg)
+parser.add_argument('-i', '--input-file', nargs=1, metavar="file",
+        default=sys.stdin,
+        help="Read input from this file (default: stdin)")
+parser.add_argument('-f', '--flush', action="store_true",
+        help="flush output periodically, even if the tail is smaller than"+\
+        " num-lines")
+parser.add_argument('-t', '--time', nargs=1, metavar='nsecs',
+        help="Time between cache updates (default: 0)")
+parser.add_argument('-n', '--num-lines', nargs=1, metavar='nlines',
+        default=10, type=int, help="Number of lines in tail (default: 10)")
+parser.add_argument('cache_file', type=argparse.FileType('w'))
+
+args = parser.parse_args()
+
+if args.time:
+    raise NotImplementedError
+
+from collections import deque
+
+tail = deque(maxlen=args.num_lines[0])
+
+if args.flush:
+    raise NotImplementedError
+
+# it's a stupid method to choose a name, but I don't care
+tmpfile = open(args.cache_file.name+".tmp", "w")
+
+for line in args.input_file:
+    tail.append(line)
+    cache_tail(tail, tmpfile)
+    shutil.copyfile(tmpfile.name, args.cache_file.name)
+    os.fsync(args.cache_file.fileno())
+
+os.remove(tmpfile.name)

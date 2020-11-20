@@ -1,0 +1,3 @@
+#!/bin/bash
+
+pbpaste | preprocess_nature.py | say -r 250

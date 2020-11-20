@@ -1,0 +1,8 @@
+#!/bin/bash
+# Returns the sum of a column
+if [ -z "$2" ]; then
+    echo "Usage: $(basename $0) filename col"
+    exit 1
+fi
+
+awk "{s=s+\$$2} END {print s/NR}" $1

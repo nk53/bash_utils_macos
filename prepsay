@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# redirect stdin to sed
+sed -E "s/-GUI/ gooey/g" <&0 |
+    sed -E "s/-gui/ gooey/g" |
+    sed -E "s/CHARMM/charm/g" |
+    sed -E "s/charmm/charm/g" |
+    sed -E "s/- //g"

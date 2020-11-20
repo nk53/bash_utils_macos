@@ -1,0 +1,17 @@
+#!/usr/bin/env python3
+import json, yaml
+from sys import argv, exit
+
+if len(argv) < 2:
+    from os.path import basename
+    usage = "Usage: {} filename"
+    print(usage.format(basename(argv[0])))
+    exit()
+
+with open(argv[1]) as fh:
+    obj = json.load(fh)
+
+ystr = yaml.dump(obj, default_flow_style=False)
+
+# just print it
+print(ystr)

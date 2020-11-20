@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+import argparse
+
+helpmsg = "Concatenate images along a specified dimension. "
+parser = argparse.ArgumentParser(description=helpmsg)
+parser.add_argument('filename', nargs='+', help="Images to concatenate")
+
+args = parser.parse_args()
+
+from PIL import Image
+import numpy as np
+import os
+
+white3 = np.array([255,255,255], dtype=np.uint8)
+white = np.uint8(255)
+for filename in args.filename:
+    im = Image.open(filename)
+    im = im.convert(mode='RGB')
+    pixels = np.asarray(im)
+
+    alpha = (pixels == white3)
+    alpha = (alpha.all(axis=2) == False) * white
+    alpha = Image.fromarray(alpha, mode="L")
+    im.putalpha(alpha)
+
+    basename = os.path.splitext(filename)[0]
+    outname = basename + '_alpha.png'
+    im.save(outname)

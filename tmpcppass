@@ -1,0 +1,11 @@
+#!/bin/bash
+# Copies the contents of ~/.cgprodpw to the macOS clipboard for 10 seconds,
+# then replaces it with its previous contents.
+#
+# This program is best used if run in the background with &
+
+oldclip=$(pbpaste)
+
+pbcopy < ~/.cgprodpw
+sleep 10
+echo -n $oldclip | pbcopy

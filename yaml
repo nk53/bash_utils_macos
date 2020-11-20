@@ -1,0 +1,8 @@
+#!/usr/bin/env python3 -i
+import sys
+import yaml
+
+with open(sys.argv[1]) as fh:
+    obj = yaml.load(fh.read(), Loader=yaml.FullLoader)
+
+print(obj)

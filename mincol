@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+# Returns the largest float that occurs in a given file's column
+from sys import argv
+
+infile = argv[1]
+col_nums = list(map(int, argv[2:]))
+
+with open(infile) as fh:
+    cols = [[]] * len(col_nums)
+    for line in fh:
+        line = line.strip().split()
+        for col_num, col in zip(col_nums, cols):
+            col.append(float(line[col_num-1]))
+
+if cols:
+    mins = [str(min(col)) for col in cols]
+    print(" ".join(mins))

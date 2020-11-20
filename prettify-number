@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+import argparse
+
+helpmsg = "Takes a number and returns something easier to read"
+parser = argparse.ArgumentParser(description=helpmsg)
+parser.add_argument('-s', '--scientific', action="store_true",
+        help="Print the given value in scientific notation")
+parser.add_argument('-p', '--precision', type=int,
+        help="Precision to print to (scientific only)")
+parser.add_argument('-nc', '--no-commas', action="store_true",
+        help="Disable commas in output")
+parser.add_argument('-a', '--approx', action="store_true",
+        help="Print only the most significant word. E.g.: "+
+             "123456789 --> 123 million, and not 123 million "+
+             "456 thousand 789")
+parser.add_argument('num', type=float, help="Number to convert")
+args = parser.parse_args()
+
+if args.scientific:
+    if args.precision != None:
+        template = "{:."+str(args.precision)+"E}"
+    else:
+        template = "{:E}"
+    print(template.format(args.num))
+else:
+    import math
+    # this really ought to be enough
+    names = ["thousand", "million", "billion", "trillion", "quadrillion",
+             "quintillion", "sextillion", "septillion", "octillion",
+             "nonillion", "decillion", "undecillion", "duodecillion",
+             "tredecillion", "quattuordecillion", "quindecillion",
+             "sexdecillion", "septendecillion", "octodecillion",
+             "novemdecillion", "vigintillion", "centillion"]
+    pvs = [i for i in range(1,23)] + [10**303]
+    name_map = {pv:name for pv, name in zip(pvs, names)}
+    pv = int(math.log(args.num, 1000))
+
+    num = args.num
+    prettified = []
+    while pv > 0:
+        if not pv in name_map.keys():
+            raise NotImplementedError("pv: " +str(pv))
+        remainder = num % 1000**pv
+        num = int(num / 1000**pv)
+        name = name_map[pv]
+        prettified.append("{} {}".format(num, name))
+        if not remainder:
+            pv -= 1
+        else:
+            pv = int(math.log(remainder, 1000))
+        num = remainder
+    if num > 0:
+        prettified.append("{}".format(int(num)))
+
+    if args.approx:
+        print(prettified[0])
+    else:
+        print(" ".join(prettified))

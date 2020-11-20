@@ -1,0 +1,3 @@
+#!/bin/bash
+
+ifconfig | grep -Eo "inet[^ ]* [0-9.]+" | grep -v "127.0.0.1" | cut -f2 -d" "

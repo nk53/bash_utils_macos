@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for vidfile in *.mp4; do
+    ffmpeg -i $vidfile -c copy -an tmpfile.mp4
+    mv tmpfile.mp4 $vidfile
+done
