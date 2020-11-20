@@ -1,0 +1,25 @@
+#!/bin/bash
+# Shows a box in VMD
+
+if [ -z "$2" ]; then
+    echo "Usage: box box_x [box_y box_z] pdb_file"
+    exit 1
+fi
+
+if [ -n "$3" ] && [ -z "$4" ]; then
+    echo "Usage: box box_x [box_y box_z] pdb_file"
+    exit 2
+fi
+
+x=$1
+if [ -z "$4" ]; then
+    y=$1
+    z=$1
+    pdbfile=$2
+else
+    y=$2
+    z=$3
+    pdbfile=$4
+fi
+
+vmd -e $HOME/src/vmd/draw_box.tcl -args $x $y $z $pdbfile

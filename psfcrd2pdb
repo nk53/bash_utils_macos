@@ -1,0 +1,30 @@
+#!/bin/bash
+
+if [ ! -f toppar.str ]; then
+    echo "Error: need toppar.str and toppar/ before conversion can occur"
+    exit 1
+fi
+
+psffile=$1
+crdfile=$2
+
+pdbfile=${2%crd}pdb
+
+charmm << END
+* HI
+*
+
+stream toppar.str
+
+open read unit 10 name $psffile card
+read psf  unit 10 card
+
+open read unit 10 name $crdfile card
+read coor unit 10 card
+
+open write unit 11 name $pdbfile card
+write coor pdb unit 11
+
+stop
+END
+

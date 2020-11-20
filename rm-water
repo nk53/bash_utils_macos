@@ -1,0 +1,43 @@
+#!/bin/bash
+
+ARGS=$@
+
+# default to set args to base=$@
+if [[ -z "$2" ]] && [[ "${1:0:4}" != "base" ]]; then
+    ARGS="base=$@"
+fi
+
+charmm $ARGS << END
+* Removes all residues named like TIP3
+*
+
+DIMENS CHSIZE 5000000 MAXRES 3000000
+
+! allow shorthand specification of file base
+if @?base eq 1 set psf = @{base}.psf
+if @?base eq 1 set crd = @{base}.crd
+if @?base eq 1 set psf_out = @{base}_nowater.psf
+if @?base eq 1 set crd_out = @{base}_nowater.crd
+
+if @?psf eq 0 stop ! missing PSF name (include .psf in filename)
+if @?crd eq 0 stop ! missing CRD name (include .crd in filename)
+if @?psf_out eq 0 stop ! missing PSF_OUT name (include .psf in filename)
+if @?crd_out eq 0 stop ! missing CRD_OUT name (include .crd in filename)
+
+if @?select eq 0 set select = resname TIP3*
+
+prnlev 0
+wrnlev 0
+stream toppar.str
+wrnlev 5
+prnlev 5
+
+read psf  card name @psf
+read coor card name @crd
+
+delete atoms select @select end
+
+write psf  card name @{psf_out}
+write coor card name @{crd_out}
+
+END

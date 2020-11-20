@@ -1,0 +1,36 @@
+#!/bin/bash
+# Opens CHARMM PSF/CRD pair in VMD
+
+if [ -z "$1" ]; then
+    echo "Usage: $0 basename"
+    exit 1
+fi
+
+#psf=${1}.psf
+
+
+if [ -e ${1}.psf ]; then
+    psf=${1}.psf
+elif [ -e ${1}psf ]; then
+    psf=${1}psf
+fi
+
+echo $psf
+
+if [ -z "$2" ]; then
+    crd=${psf%.psf}.crd
+else
+    crd=${2}.crd
+fi
+
+if [ ! -e $psf ]; then
+    echo "No such file: $psf"
+    exit 2
+fi
+
+if [ ! -e $crd ]; then
+    echo "No such file: $crd"
+    exit 3
+fi
+
+vmd $psf -e ~/src/vmd/load_psfcrd.tcl -args $crd

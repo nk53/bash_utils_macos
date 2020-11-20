@@ -1,0 +1,28 @@
+#!/bin/bash
+# A PDB parsing script that Jumin showed me
+#
+# Given an input PDB file and a segment ID, it will show the unique
+# residues in that segment
+
+if [ -z "$1" ]; then
+    echo "Usage: $0 pdb_file resid"
+    echo "    Shows the unique chains in a segment"
+    exit 1
+fi
+
+pdbfile=$1
+resid=$2
+
+# if user didn't specify a segment, restrict search to all atoms
+if [ -z "$segid" ]; then
+    resid="ATOM"
+fi
+
+extension=${pdbfile: -3} #space is required ...
+if [ $extension == "psf" ]; then
+    # run the python script to do this ...
+    get_unique_chains.py $@
+else  # assume PDB
+    # chain/segid is listed in the last field of an atom record
+    grep -i $resid $pdbfile | grep -Eo "\w+[ ]*$" | sort -u
+fi

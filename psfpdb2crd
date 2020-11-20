@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [ -z "$3" ]; then
+    charmm -i $HOME/charmm/psfpdb2crd.inp psf=$1 pdb=$2
+else
+    charmm -i $HOME/charmm/psfpdb2crd.inp psf=$1 pdb=$2 crd=$3
+fi
+
