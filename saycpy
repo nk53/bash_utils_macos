@@ -1,8 +1,3 @@
 #!/bin/bash
 
-rate=250
-if [ -n "$1" ]; then
-    rate="$1"
-fi
-
-pbpaste | prepsay | say -r $rate
+pbpaste | prepsay | say $@
