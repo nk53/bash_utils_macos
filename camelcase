@@ -1,0 +1,55 @@
+#!/usr/bin/env python
+from sys import stdin
+import argparse
+from random import uniform
+
+helpmsg = "Convert text to camel case"
+parser = argparse.ArgumentParser(description=helpmsg)
+parser.add_argument('-c', '--cancer', action='store_true',
+        help="Use cAnCEr cAmeL CAsE instead")
+parser.add_argument('-m', '--max', nargs=1, metavar='N_CHARS', default=[1],
+        type=int,
+        help="(-c only) sets maximum # of chars of same capitalization")
+parser.add_argument('-U', '--upper', action='store_true',
+        help="(-c only) first character is uppercase (default: lowercase)")
+parser.add_argument('string', nargs='*')
+
+args = parser.parse_args()
+upper = args.upper
+args.max = args.max[0]
+
+def apply(func):
+    if args.string:
+        print(func(' '.join(args.string)))
+    else:
+        with stdin:
+            for line in stdin:
+                print(func(line), end='')
+
+def cancer(string):
+    global upper
+    ncase = int(uniform(0, args.max) + 1)
+    case = upper and str.upper or str.lower
+    string = string.lower()
+    newstr = ''
+
+    for char in string:
+        if char.isalpha():
+            if ncase > 0:
+                ncase -= 1
+            else:
+                upper = not upper
+                case = upper and str.upper or str.lower
+                ncase = int(uniform(0, args.max))
+            newstr += case(char)
+        else:
+            newstr += char
+
+    return newstr
+
+if args.cancer:
+    if args.max < 1:
+        raise ValueError("max cannot be less than 1")
+    apply(cancer)
+else:
+    apply(str.title)
