@@ -11,12 +11,12 @@ substitutions = (
     (r'[a-zA-Z]+://', r''), # remove protocol from web addresses
     (r'(\w+)/([\s)])', r'\1\2'), # removes trailing / from web addresses
     (r'(\w+)/(\w+)', r'\1 slash \2', True), # say intermediate slashes
-    (r'- ', r'', True), # say intermediate slashes
-    (r'-GUI', r'gooey'),
+    (r'- ', r'', True), # remove dangling hyphens
+    (r'-GUI', r'gooey'), # say GUI phonetically
     (r'-gui', r'gooey'),
-    (r'CHARMM', r'charm'),
+    (r'CHARMM', r'charm'), # say CHARMM phonetically
     (r'charmm', r'charm'),
-    (r'force-fields', r'force fields'),
+    (r'force-fields', r'force fields'), # with hyphen: pronounced wrong
 )
 
 with sys.stdin:
