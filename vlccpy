@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -e
+
+# set a standard location to write clipboard contents in AIFF
+tmpfile=/tmp/clipboard.aiff
+
+# write clipboard contents to $tmpfile's location
+saycpy $@ -o $tmpfile
+
+# open the file in VLC
+open -a VLC $tmpfile
+
+# in a disconnected subshell, wait 1 minute, then unlink $tmpfile; return immediately
+(sleep 60 && rm $tmpfile) &
