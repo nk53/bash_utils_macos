@@ -1,0 +1,18 @@
+#!/bin/bash
+
+if [ -z "$1" ]; then
+    echo Which residue?
+fi
+
+resi=$(toupper $1)
+
+cd $TOPPAR
+fn=$(grep -rl "RESI $resi" .)
+
+if [ $? -ne 0 ]; then
+    echo "Couldn't find residue: $resi"
+    exit 1
+fi
+
+echo $fn
+vim "+/RESI $resi" "+echo v:argv" $fn
