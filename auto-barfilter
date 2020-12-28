@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+import argparse
+
+helpmsg = "Infers and creates a bar filter to change edge color"
+parser = argparse.ArgumentParser(
+    description=helpmsg)
+parser.add_argument('-b', '--buffer', type=int, nargs=1, default=[0],
+        help="Number of pixels to add to border size")
+parser.add_argument('-t', '--tolerance', type=float, default=1.0)
+parser.add_argument('-v', '--verbose', action='store_true')
+parser.add_argument('-o', '--output', required=True, help="Name of output file")
+parser.add_argument('filename', help="Images to concatenate")
+
+args = parser.parse_args()
+
+from PIL import Image
+import numpy as np
+from numpy.linalg import norm
+
+im = Image.open(args.filename)
+im = np.asarray(im)
+
+# starting from the left, count the number of pixels before the change in
+# avg/std is greater than the tolerance
+height, width, nchannels = im.shape
+col = im[:,0,:]
+prev = np.array([col.mean(axis=0), col.std(axis=0)])
+for w in range(1, width):
+    col = im[:,w,:]
+    mean = col.mean(axis=0)
+    std = col.std(axis=0)
+
+    # find the first significantly different column
+    this = np.array([mean, std])
+    delta = norm(this - prev)
+
+    if args.verbose:
+        print('prev:')
+        print(prev)
+        print('this:')
+        print(this)
+        print('delta:')
+        print(delta)
+
+    if delta > args.tolerance:
+        break
+
+    if args.verbose:
+        print('-'*76)
+        
+    prev = this
+
+border_width = w-1 + args.buffer[0]
+border_shape = height, border_width, 4
+
+middle_region_shape = height, width - border_width*2, 4
+
+# make an image with white at the edges, transparent in the middle
+white = np.uint8([255, 255, 255, 255])
+transparent = np.uint8([0, 0, 0, 255])
+border = np.ones(border_shape, dtype=np.uint8) * white
+middle = np.zeros(middle_region_shape, dtype=np.uint8) * transparent
+output = np.concatenate([border, middle, border], axis=1)
+
+# do the actual concatenation along the specified dimension
+output = Image.fromarray(output)
+output.save(args.output)
