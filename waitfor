@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ -z "$1" ]; then
+    echo "Usage: $(basename $0) pid" >&2
+    exit 1
+fi
+
+while (ps $1 >/dev/null); do
+    sleep 1
+done

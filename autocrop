@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+import argparse
+from PIL import Image, ImageColor
+
+helpmsg = "Automatically crop border from image"
+parser = argparse.ArgumentParser(description=helpmsg)
+parser.add_argument('--color', '-c', type=ImageColor.getrgb,
+        default=[255]*3, help="color to remove around subject")
+parser.add_argument('--verbose', '-v', action='store_true')
+parser.add_argument('filename', nargs='+', help="Images to crop")
+
+args = parser.parse_args()
+
+import numpy as np
+import os
+
+color3 = np.array(args.color, dtype=np.uint8)
+white = np.uint8(255)
+for filename in args.filename:
+    im = Image.open(filename)
+    im = im.convert(mode='RGB')
+    pixels = np.asarray(im)
+
+    imshape = pixels.shape[:2]
+
+    subject = pixels != color3
+
+    left = subject.any(axis=(0,-1)).argmax()
+    up = subject.any(axis=(1,-1)).argmax()
+
+    subject = np.flip(subject) # flips all axes
+
+    right = imshape[0] - subject.any(axis=(0,-1)).argmax()
+    down = imshape[1] - subject.any(axis=(1,-1)).argmax()
+
+    if args.verbose:
+        print(f'upper left corner: {left}, {up}')
+        print(f'lower right corner: {right}, {down}')
+        print(f'image dims (WxH): {right-left} x {down-up}')
+
+    pixels = pixels[up:down,left:right,:]
+    im = Image.fromarray(pixels, mode="RGB")
+    basename = os.path.splitext(filename)[0]
+    outname = basename + '_cropped.png'
+    im.save(outname)

@@ -1,0 +1,12 @@
+#!/usr/bin/env python3
+import sys
+import json
+
+with open(sys.argv[1]) as fh:
+    obj = json.load(fh)
+
+print(obj)
+
+import code, readline, rlcompleter
+readline.parse_and_bind('tab: complete')
+code.InteractiveConsole(locals()).interact()

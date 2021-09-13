@@ -1,0 +1,11 @@
+#!/bin/bash
+
+pid=$1
+outfile=${2-1}
+
+if [ -z "$pid" ]; then
+    echo "Usage: $0 pid [outfile]"
+    exit 1
+fi
+
+top -l 0 -pid $pid -stats mem | grep --line-buffered -A 1 MEM | grep --line-buffered -vE "MEM|--" > $outfile
