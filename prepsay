@@ -5,4 +5,8 @@ sed -E "s/-GUI/ gooey/g" <&0 |
     sed -E "s/-gui/ gooey/g" |
     sed -E "s/CHARMM/charm/g" |
     sed -E "s/charmm/charm/g" |
+    sed -E "s/1vii/1 vee i i/gi" |
+    sed -E "s/pdbreader/PDB Reader/gi" |
+    sed -E "s/[åÅ]/ångstrom/g" |
+    sed -E "s/(^|[^a-zA-Z])id(s?)([^a-zA-Z]|$)/\1eye dee\2\3/gi" |
     sed -E "s/- //g"

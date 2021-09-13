@@ -43,7 +43,8 @@ else:
         remainder = num % 1000**pv
         num = int(num / 1000**pv)
         name = name_map[pv]
-        prettified.append("{} {}".format(num, name))
+        if num:
+            prettified.append("{} {}".format(num, name))
         if not remainder:
             pv -= 1
         else:

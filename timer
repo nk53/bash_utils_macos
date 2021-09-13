@@ -11,6 +11,7 @@ canned_messages_obj = (
     ["Tea is done", ('--tea',)],
     ["Go to class", ('--class',)],
     ["Check laundry", ('--laundry',)],
+    ["Check food", ('--food',)],
 )
 # first column is the actual message
 canned_messages = tuple(zip(*canned_messages_obj))[0]
@@ -51,7 +52,7 @@ canned_message_all="Canned messages:\n"
 canned_attrs = []
 for ind, message_tup in enumerate(canned_messages_obj):
     message, opts = message_tup
-    help_str = "canned message " + str(ind + 1)
+    help_str = f"canned message {ind+1}: '{message}'"
     canned_message_all += "\t{}: {}\n".format(ind+1, message)
     parser.add_argument(*opts, action="store_true", help=help_str)
     longest_opt = ''
@@ -140,29 +141,34 @@ else:
             import sys
             sys.exit(4)
 
-if args.show_timer:
-    from sys import stdout
-    now_time = time.time()
-    dst_time = now_time + nsecs
-    while True:
-        time_left = dst_time - time.time()
-        if time_left < 0:
-            break
-        print("Time left:", format_time(time_left), "(hh:mm:ss) ...     \r", end='')
-        stdout.flush()
-        time.sleep(0.2)
-    print()
-    print(message)
-else:
-    # run the actual timer
-    print("Sleeping for", format_time(nsecs), "(hh:mm:ss) ...")
-    time.sleep(nsecs)
+try:
+    if args.show_timer:
+        from sys import stdout
+        now_time = time.time()
+        dst_time = now_time + nsecs
+        while True:
+            time_left = dst_time - time.time()
+            if time_left < 0:
+                break
+            print("Time left:", format_time(time_left), "(hh:mm:ss) ...     \r", end='')
+            stdout.flush()
+            time.sleep(0.2)
+        print()
+        print(message)
+    else:
+        # run the actual timer
+        print("Sleeping for", format_time(nsecs), "(hh:mm:ss) ...")
+        time.sleep(nsecs)
 
-# say the message using macOS's `say`
-if args.repeat:
-    # spam message until we get killed
-    while True:
+    # say the message using macOS's `say`
+    if args.repeat:
+        # spam message until we get killed
+        while True:
+            call(["say", message])
+    else:
+        # just say it once
         call(["say", message])
-else:
-    # just say it once
-    call(["say", message])
+except KeyboardInterrupt:
+    print()
+    import sys
+    sys.exit(1)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 import numpy as np
+import readline
 
 # just assume -p for now
 opt_names = ["function", "start", "end", "step"]

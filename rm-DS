@@ -9,11 +9,15 @@ if len(sys.argv) == 1:
 else:
     dirs = sys.argv[1:]
 
+confirm = dirs[0].lower() == '-y'
+
 for root in dirs:
     for dirpath, dirnames, filenames in os.walk(root):
         if '.DS_Store' in filenames:
             path = pjoin(dirpath, '.DS_Store')
             prompt = "Remove {}? [y/N] ".format(path)
-            remove = get_input(prompt, allowed="ynYN", default="n").lower()
-            if remove == "y":
+            if confirm:
+                remove = get_input(prompt, allowed="ynYN",
+                        default="n").lower()
+            if not confirm or remove == "y":
                 os.unlink(path)

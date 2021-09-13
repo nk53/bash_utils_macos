@@ -6,23 +6,38 @@ def n_choose_k(n, k):
     n, k = map(float, (n, k))
     return fact(n) / (fact(k) * fact(n - k))
 
+def eval_expr(func, expr):
+    orig, expr = expr, expr.strip()
+    if expr.endswith('%'):
+        expr = expr[:-1]+'/100'
+    value = func(eval(expr))
+    if str(value) != orig.replace(' ', ''):
+        print(orig, '=', value)
+    return value
+
+def eval_int(expr):
+    return eval_expr(int, expr)
+
+def eval_float(expr):
+    return eval_expr(float, expr)
+
 helpmsg = "Calculate something using the binomial probability distribution"
 parser = argparse.ArgumentParser(description=helpmsg)
 parser.add_argument('-i', '--invert', action='store_true',
     help="Return (1 - p) instead of p")
-parser.add_argument('-k', type=int, metavar="num_success",
+parser.add_argument('-k', type=eval_int, metavar="num_success",
     help="Exact number of successes")
-parser.add_argument('-n', type=int, metavar="num_trials", required=True,
-    help="Number of trials")
-parser.add_argument('-p', type=float, metavar="p_single", required=True,
-    help="Individual event's probability of success")
+parser.add_argument('-n', type=eval_int, metavar="num_trials",
+    required=True, help="Number of trials")
+parser.add_argument('-p', type=eval_float, metavar="p_single",
+    required=True, help="Individual event's probability of success")
 
 # cumulative options
 parser.add_argument('-c', action='store_true',
     help="Compute comulative PDF (requires -a and/or -b)")
-parser.add_argument('-a', type=int, metavar="from_num",
+parser.add_argument('-a', type=eval_int, metavar="from_num",
     help="Lower bound on cumulative PDF", default=0)
-parser.add_argument('-b', type=int, metavar="to_num",
+parser.add_argument('-b', type=eval_int, metavar="to_num",
     help="Upper bound on cumulative PDF")
 
 args = parser.parse_args()

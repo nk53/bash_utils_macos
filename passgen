@@ -4,7 +4,17 @@
 import argparse
 import string as s
 from random import shuffle
+from random import sample
 from sys import argv
+
+def nnint(arg):
+    try:
+        arg = int(arg)
+        assert arg >= 0
+    except:
+        errmsg = f"invalid non-negative integer value: '{arg}'"
+        raise argparse.ArgumentTypeError(errmsg)
+    return arg
 
 punc = ".-&@!#$%*;?"
 helpmsg = "Creates a random password."
@@ -12,16 +22,20 @@ helpmsg = "Creates a random password."
 parser = argparse.ArgumentParser(description=helpmsg)
 parser.add_argument('-n', '--no-punctuation', action="store_true",
         help="disables all punctuation")
-parser.add_argument('-p', '--punctuation', type=str, nargs=1, default=punc,
+parser.add_argument('-p', '--punctuation', type=str, nargs=1, default=[punc],
         metavar="allowed_chars", help="use a list of allowed characters"+\
         " other than the default (%(default)s)")
+parser.add_argument('-P', '--require-punctuation', nargs='?', default=1, type=nnint,
+        metavar="NUM", help="require at least NUM punctuation chars (default: 1)")
+parser.add_argument('-N', '--require-number', nargs='?', default=1, type=nnint,
+        metavar="NUM", help="require at least NUM numerical chars (default: 1)")
 parser.add_argument('length', type=int, nargs='?', default=16,
         help="number of characters to put in the password")
 
 # allowed characters for passwords
 args = parser.parse_args()
 if not args.no_punctuation:
-    allowed_chars = args.punctuation
+    allowed_chars = args.punctuation[0]
 else:
     allowed_chars = ""
 
@@ -30,6 +44,15 @@ allowed_chars = list(allowed_chars)
 
 def get_pass(pass_length):
     password = ""
+
+    for i in range(args.require_number):
+        password += sample("1234567890", 1)[0]
+    pass_length -= args.require_number
+
+    for i in range(args.require_punctuation):
+        password += sample(args.punctuation[0], 1)[0]
+    pass_length -= args.require_number
+
     for i in range(pass_length):
         shuffle(allowed_chars)
         password += allowed_chars[0]
