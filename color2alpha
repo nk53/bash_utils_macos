@@ -2,7 +2,7 @@
 import argparse
 from PIL import Image, ImageColor
 
-helpmsg = "Concatenate images along a specified dimension. "
+helpmsg = "Convert pixels of a given color to transparency"
 parser = argparse.ArgumentParser(description=helpmsg)
 parser.add_argument('--color', '-c', type=ImageColor.getrgb,
         default=[255]*3, help="color to make alpha")
