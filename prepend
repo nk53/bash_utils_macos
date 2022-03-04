@@ -1,0 +1,11 @@
+#!/bin/bash
+
+while read line; do
+    echo $@$line
+    lastline=$(sed -E "s/ //g" <<< $line)
+done
+
+thisline=$(sed -E "s/ //g" <<< $line)
+if [[ "$lastline" != "$thisline" ]]; then
+    echo $@$line
+fi

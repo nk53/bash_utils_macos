@@ -1,0 +1,4 @@
+#!/bin/bash
+# simple shortcut to modify the contents of the clipboard
+
+pbpaste | $@ | pbcopy

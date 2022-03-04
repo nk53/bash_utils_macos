@@ -7,7 +7,9 @@ fi
 
 
 # get a URL-safe version of the user's query
-pystr="from urllib import quote; print quote('$@')"
-q=$(python2 -c "$pystr")
+pystr="from urllib.parse import quote; print(quote('$@'))"
+q=$(python3 -c "$pystr")
+
+echo $q
 
 open http://www.thefreedictionary.com/$q

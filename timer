@@ -12,6 +12,7 @@ canned_messages_obj = (
     ["Go to class", ('--class',)],
     ["Check laundry", ('--laundry',)],
     ["Check food", ('--food',)],
+    ["Go to meeting", ('--meeting',)],
 )
 # first column is the actual message
 canned_messages = tuple(zip(*canned_messages_obj))[0]

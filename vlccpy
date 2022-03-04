@@ -1,12 +1,18 @@
 #!/bin/bash
 
-set -e
-
 # set a standard location to write clipboard contents in AIFF
 tmpfile=/tmp/clipboard.aiff
 
 # write clipboard contents to $tmpfile's location
-saycpy $@ -o $tmpfile
+if [[ "$1" == "-" ]]; then
+    args=$@
+    args[0]=""
+    set -e
+    cat - | prepsay | say ${args[@]} -o $tmpfile
+else
+    set -e
+    saycpy $@ -o $tmpfile
+fi
 
 # open the file in VLC
 open -a VLC $tmpfile

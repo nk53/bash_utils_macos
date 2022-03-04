@@ -2,4 +2,4 @@
 # Creating a complete copy of a web page for local viewing, downloading
 # extra files/pages as needed
 
-wget --mirror --convert-links --backup-converted --adjust-extension $1
+wget --mirror --convert-links --backup-converted --adjust-extension $@

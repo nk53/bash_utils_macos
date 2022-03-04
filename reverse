@@ -1,0 +1,15 @@
+#!/bin/bash
+# In-place (ish) tail -r
+
+for filename in $@; do
+    if [[ ! -e "$filename" ]]; then
+        echo "No such file: \"$filename\"" >&2
+        continue
+    fi
+    if [[ -e "$filename.bak" ]]; then
+        echo "Backup file already exists: \"$filename.bak\""
+        exit 2
+    fi
+    mv $filename $filename.bak
+    tail -r "$filename.bak" > $filename
+done

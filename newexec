@@ -3,3 +3,9 @@
 
 touch $1
 chmod +x $1
+
+if [[ -n "$2" ]]; then
+    echo '#!'"$2" >> $1
+fi
+
+vim $1

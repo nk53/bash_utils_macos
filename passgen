@@ -3,8 +3,7 @@
 # use -h or --help for detailed help info
 import argparse
 import string as s
-from random import shuffle
-from random import sample
+from random import choices, sample, shuffle
 from sys import argv
 
 def nnint(arg):
@@ -43,19 +42,16 @@ allowed_chars += s.ascii_letters + s.digits
 allowed_chars = list(allowed_chars)
 
 def get_pass(pass_length):
-    password = ""
+    password = []
 
-    for i in range(args.require_number):
-        password += sample("1234567890", 1)[0]
-    pass_length -= args.require_number
+    password += choices("1234567890", k=args.require_number)
+    password += choices(args.punctuation[0], k=args.require_punctuation)
+    pass_length -= args.require_number + args.require_punctuation
 
-    for i in range(args.require_punctuation):
-        password += sample(args.punctuation[0], 1)[0]
-    pass_length -= args.require_number
+    password += choices(allowed_chars, k=pass_length)
 
-    for i in range(pass_length):
-        shuffle(allowed_chars)
-        password += allowed_chars[0]
-    return password
+    shuffle(password)
+
+    return ''.join(password)
 
 print(get_pass(args.length))
