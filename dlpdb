@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -e
+
+for pdb in $@; do
+    pdb=$pdb.pdb
+    echo curl "https://files.rcsb.org/download/$pdb"
+    curl "https://files.rcsb.org/download/$pdb" > $pdb
+    echo
+done
+
+echo done

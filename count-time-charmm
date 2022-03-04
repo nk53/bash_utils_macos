@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+import os
+import subprocess
+import sys
+from glob import glob
+
+dirnames = sys.argv[1:]
+show_dirname = bool(dirnames)
+if not dirnames:
+    dirnames = '.'
+
+for dirname in dirnames:
+    os.chdir(dirname)
+
+    if not glob("*out"):
+        os.chdir('..')
+        continue
+
+    lines = subprocess.check_output(["/bin/bash",
+        "-c", "tail *out | grep -i elapsed"])
+    lines = lines.decode('ascii').split("\n")
+
+    t = 0
+    for line in lines:
+        line = line.lower().strip()
+        if "second" in line:
+            m = 1
+        elif "minute" in line:
+            m = 60
+        else:
+            m = 3600
+        fields = line.split()
+        if len(fields) > 2:
+            value = float(fields[2])
+            t += value
+
+    # convert to natural time
+    factors = (3600, 60, 1)
+    units = ("HOURS", "MINUTES", "SECONDS")
+    if show_dirname:
+        print('{}:'.format(dirname), end=' ')
+    for f, u in zip(factors, units):
+        if t > f:
+            t /= f
+            print("{:.2f} {}".format(t, u))
+            break
+
+    os.chdir('..')
