@@ -15,7 +15,6 @@ import numpy as np
 import os
 
 color3 = np.array(args.color, dtype=np.uint8)
-white = np.uint8(255)
 for filename in args.filename:
     im = Image.open(filename)
     im = im.convert(mode='RGB')
@@ -23,20 +22,22 @@ for filename in args.filename:
 
     imshape = pixels.shape[:2]
 
-    subject = pixels != color3
+    subject = (pixels != color3).all(axis=-1)
 
-    left = subject.any(axis=(0,-1)).argmax()
-    up = subject.any(axis=(1,-1)).argmax()
+    left = subject.any(axis=0).argmax()
+    up = subject.any(axis=1).argmax()
 
     subject = np.flip(subject) # flips all axes
 
-    right = imshape[0] - subject.any(axis=(0,-1)).argmax()
-    down = imshape[1] - subject.any(axis=(1,-1)).argmax()
+    right = imshape[1] - subject.any(axis=0).argmax()
+    down = imshape[0] - subject.any(axis=1).argmax()
+
+    import pdb; pdb.set_trace()
 
     if args.verbose:
         print(f'upper left corner: {left}, {up}')
         print(f'lower right corner: {right}, {down}')
-        print(f'image dims (WxH): {right-left} x {down-up}')
+        print(f'image dims (HxW): {down-up} x {right-left}')
 
     pixels = pixels[up:down,left:right,:]
     im = Image.fromarray(pixels, mode="RGB")
