@@ -32,8 +32,6 @@ for filename in args.filename:
     right = imshape[1] - subject.any(axis=0).argmax()
     down = imshape[0] - subject.any(axis=1).argmax()
 
-    import pdb; pdb.set_trace()
-
     if args.verbose:
         print(f'upper left corner: {left}, {up}')
         print(f'lower right corner: {right}, {down}')
