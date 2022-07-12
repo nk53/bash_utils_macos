@@ -1,0 +1,51 @@
+#!/bin/bash
+
+tolower() {
+    tr "[:upper:]" "[:lower:]"
+}
+
+groups=$@
+if [[ -z "$@" ]]; then
+    set -e
+    groups=`cat msd.config`
+fi
+
+set -e
+for group in $groups; do
+    glower=`tolower <<< $group`
+    # get title and axis labels; includes quotes
+    title=`grep -E "^@ *title" msd_$glower.xvg | grep -Eo '"[^"]*"'`
+    xlabel=`grep -E "^@ *xaxis *label" msd_$glower.xvg | grep -Eo '"[^"]*"'`
+    ylabel=`grep -E "^@ *yaxis *label" msd_$glower.xvg | grep -Eo '"[^"]*"'`
+
+    # get data points
+    grep -E "^[^#@]" msd_${glower}.xvg > msd_${glower}.dat
+done
+
+# save plotting script so it can be fine-tuned later
+
+cat - >plot.gpl <<END
+#!/usr/bin/env gnuplot
+
+set term pngcairo enhanced font "Arial,16"
+
+set title $title
+set xlabel $xlabel
+set ylabel $ylabel
+
+set output 'msd.png'
+END
+
+plot='plot'
+for group in $groups; do
+    glower=`tolower <<< $group`
+    plot="$plot 'msd_$glower.dat' with lines title '$group',"
+done
+
+# remove trailing comma
+plot=`sed -E 's/(.*),/\1/' <<< $plot`
+echo $plot
+echo $plot >> plot.gpl
+
+chmod +x plot.gpl
+
