@@ -1,0 +1,99 @@
+#!/usr/bin/env python
+"""Reference used: https://en.wikipedia.org/wiki/UTF-8"""
+import sys
+
+
+def ubyte(char: str) -> str:
+    return bytes(char, 'utf8').hex().upper()
+
+
+def ubytestr(b: bytes) -> str:
+    return 'U+' + b.hex().upper()
+
+
+def u1b(char: str) -> str:
+    """UTF-8 one-byte char"""
+    return 'U+' + ubyte(char)
+
+
+def u2b(char: str) -> str:
+    """UTF-8 two-byte char"""
+    lead = 0b11000000
+    pad = 0b10000000
+
+    bytestrs = bytes(char, 'utf8').hex(' ').split()
+    x, y, z = map(lambda n: int(n, base=16), bytestrs)
+    assert len(bin(x)) <= 5, x
+
+    x <<= 2
+    y1 = y >> 2
+    y2 = y << 4
+
+    return ubytestr(bytes(
+        [lead + x + y1,
+         pad + y2 + z]))
+
+
+def u3b(char: str) -> str:
+    """UTF-8 three-byte char"""
+    lead = 0b11100000
+    pad = 0b10000000
+
+    bytestrs = bytes(char, 'utf8').hex(' ').split()
+    w, x, y, z = map(lambda n: int(n, base=16), bytestrs)
+
+    x <<= 2
+    y1 = y >> 2
+    y2 = y << 4
+
+    return ubytestr(bytes(
+        [lead + w,
+         pad + x + y1,
+         pad + y2 + z]))
+
+
+def u4b(char: str) -> str:
+    """UTF-8 four-byte char"""
+    lead = 0b11110000
+    pad = 0b10000000
+
+    bytestrs = bytes(char, 'utf8').hex(' ').split()
+    u, v, w, x, y, z = map(lambda n: int(n, base=16), bytestrs)
+
+    assert len(bin(u)) <= 3, u
+
+    x <<= 2
+    y1 = y >> 2
+    y2 = y << 4
+    v1 = v >> 2
+    v2 = v << 4
+    u <<= 2
+
+    return ubytestr(bytes(
+        [lead + u + v1,
+         pad + v2 + w,
+         pad + x + y1,
+         pad + y2 + z]))
+
+
+def main(code_point: str) -> str:
+    intval = bytes(code_point, 'utf8')[0]
+
+    if intval <= 0x007F:
+        return u1b(code_point)
+
+    if intval <= 0x07FF:
+        return u2b(code_point)
+
+    if intval <= 0xFFFF:
+        return u3b(code_point)
+
+    if intval <= 0x10FFFF:
+        return u4b(code_point)
+
+    raise ValueError(f"Unrecognized code point: {code_point}")
+
+
+if __name__ == '__main__':
+    for code_point in sys.argv[1:]:
+        print(main(code_point))

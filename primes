@@ -1,0 +1,100 @@
+#!/usr/bin/env python
+
+primes_sorted: list[int] = [2, 3, 5, 7, 11, 13, 17, 19]
+primes = set(primes_sorted)
+
+
+def is_prime(n: int) -> bool:
+    global primes, primes_sorted
+
+    if n in primes:
+        return True
+
+    if n < primes_sorted[-1]:
+        return False
+
+    for prime in primes_sorted:
+        if n % prime == 0:
+            return False
+
+    while next_prime() < n:
+        pass
+
+    return is_prime(n)
+
+
+def nth_prime(n: int) -> int:
+    global primes, primes_sorted
+
+    assert n > 1
+    n_known = len(primes_sorted)
+    if n_known <= n:
+        return primes_sorted[n-1]
+
+    n -= n_known
+    i = primes_sorted[-1] + 1
+    while n:
+        if is_prime(i):
+            n -= 1
+        i += 1
+
+    return primes_sorted[-1]
+
+
+def next_prime() -> int:
+    global primes, primes_sorted
+
+    i = primes_sorted[-1] + 1
+    for prime in primes_sorted:
+        if i % prime == 0:
+            i += 1
+            continue
+        break
+
+    primes.add(i)
+    primes_sorted.append(i)
+
+    return i
+
+
+def max_prime(n: int) -> int:
+    global primes_sorted
+
+    assert n > 1
+    prev = 0
+
+    # is prime known?
+    if n < primes_sorted[-1]:
+        for prime in primes_sorted:
+            if prime > n:
+                return prev
+            prev = prime
+
+    # keeping getting primes until it's > max
+    while (i := next_prime()) < n:
+        pass
+
+    if i == n:
+        return i
+
+    return primes_sorted[-2]
+
+    assert False
+
+
+def main() -> None:
+    import sys
+    nums = [int(n) for n in sys.argv[1:]]
+
+    low = min(nums)
+    if low < 0:
+        print(f"{low} is negative. Enter positive values only.", file=sys.stderr)
+        sys.exit(1)
+
+    nums = [n for n in nums if is_prime(n)]
+    print('primes:', *nums)
+    print(f'{len(primes)} known primes:', *primes_sorted)
+
+
+if __name__ == '__main__':
+    main()

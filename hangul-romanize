@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+import sys
+from collections.abc import Iterable
+from unicodedata import name as uname
+
+
+class UTF8Character:
+    def __init__(self, value: str | bytes | int):
+        """Facilitates conversion between UTF-8 representations.
+
+        Assumptions about value:
+            UTF8Character(str) -> value is UTF-8 decoded
+            UTF8Character(bytes) -> value is UTF-8 encoded
+            UTF8Character(int) -> value is UTF-8 code-point
+        """
+        if isinstance(value, bytes):
+            value = value.decode('utf-8')
+        elif isinstance(value, int):
+            value = chr(value)
+
+        self.decoded = value
+        self.encoded = value.encode('utf-8')
+        self.code_point = ord(value)
+        self.name = uname(value)
+
+    def __repr__(self) -> str:
+        return f"<U+{self.code_point}: {self.decoded!r} = {self.encoded.hex(' ')}"
+
+    def __str__(self) -> str:
+        return self.decoded
+
+
+class HangulSyllable(UTF8Character):
+    def __init__(self, value: str | bytes | int):
+        super().__init__(value)
+
+        name = self.name.lower()
+        if not name.startswith('hangul syllable '):
+            raise ValueError(f"Not a hangul syllable: {value!r}")
+
+    def romanize(self) -> str:
+        return ''.join(self.name.split()[2:]).lower()
+
+
+class HangulWord(list[HangulSyllable]):
+    def __init__(self, syllables: Iterable[HangulSyllable]):
+        super().__init__(syllables)
+
+    def __str__(self) -> str:
+        return ''.join(str(syllable) for syllable in self)
+
+    def romanize(self) -> str:
+        return ''.join(w.romanize() for w in self)
+
+
+def romanize_words(words: Iterable[str]) -> None:
+    out_words = [HangulWord(HangulSyllable(s) for s in word)
+                 for word in words]
+
+    print(' '.join(map(HangulWord.romanize, out_words)))
+
+
+if __name__ == '__main__':
+    if words := sys.argv[1:]:
+        romanize_words(words)
+    else:
+        for line in sys.stdin:
+            romanize_words(line.split())

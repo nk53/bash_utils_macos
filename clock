@@ -1,0 +1,223 @@
+#!/usr/bin/env python
+import typing as t
+from time import localtime
+from enum import StrEnum
+
+type Number = float | int
+type OptInt = int | None
+type OptNum = Number | None
+
+SECONDS = StrEnum('SECONDS', ('s', 'sec', 'secs', 'second', 'seconds'))
+MINUTES = StrEnum('MINUTES', ('m', 'min', 'mins', 'minute', 'minutes'))
+HOURS = StrEnum('HOURS', ('h', 'hr', 'hrs', 'hour', 'hours'))
+TIME_STR = tuple(SECONDS) + tuple(MINUTES) + tuple(HOURS)
+
+type Seconds = t.Literal['h', 'hr', 'hrs', 'hour', 'hours']
+type Minutes = t.Literal['m', 'min', 'mins', 'minute', 'minutes']
+type Hours = t.Literal['s', 'sec', 'secs', 'second', 'seconds']
+type TimeNum = Seconds | Minutes | Hours
+type TimeLike = str | int | float
+
+
+def now() -> str:
+    lt = localtime()
+    return f"{lt.tm_hour}:{lt.tm_min}:{lt.tm_sec}"
+
+
+def require_type[T](required_type: type[T], value: t.Any) -> None:
+    if isinstance(value, required_type):
+        return
+
+    expected_got_type(required_type, value)
+
+
+def expected_got_type(required_type: type, value: t.Any) -> None:
+    expected = required_type.__name__
+    got = value.__class__.__name__
+    raise TypeError(f"Expected {expected}, but got {value!r} ({got}).")
+
+
+def require_str(value: t.Any) -> None:
+    require_type(str, value)
+
+
+class Time:
+    hours: int
+    minutes: int
+    seconds: float
+
+    def __init__(self, time: str | t.Self = '', /,
+                 *, hours: OptInt = None,
+                 minutes: OptInt = None,
+                 seconds: OptNum = None):
+        require_str(time)
+
+        if time:
+            if hours is not None:
+                raise TypeError("Positional args can't be used with kwargs.")
+            if isinstance(time, str):
+                hours, minutes, seconds = type(self).parse_time(time, carry=False)
+            else:
+                hours = time.hours
+                minutes = time.minutes
+                seconds = time.seconds
+        elif hours is None and minutes is None and seconds is None:
+            raise TypeError("At least one argument required.")
+        else:
+            hours = int(hours or 0)
+            minutes = int(minutes or 0)
+            seconds = float(seconds or 0.)
+
+        self.hours, self.minutes, self.seconds = self.carry(hours, minutes, seconds)
+
+    @staticmethod
+    def carry(hours: int, minutes: int, seconds: float) -> tuple[int, int, float]:
+        total_seconds = hours * 3600 + minutes * 60 + seconds
+        seconds = abs(total_seconds)
+
+        minutes = int(seconds // 60)
+        seconds %= 60
+
+        hours = minutes // 60
+        minutes %= 60
+
+        # only the most significant value should be negative, if total is negative
+        hms = hours, minutes, seconds
+        if total_seconds < 0:
+            hours, minutes, seconds = map(abs, hms)  # type: ignore[assignment]
+            if hours:
+                hours = -hours
+            elif minutes:
+                minutes = -minutes
+            elif seconds:
+                seconds = -seconds
+
+        return hours, minutes, seconds
+
+    @classmethod
+    def parse_time(cls, time: str, carry: bool = True) -> tuple[int, int, float]:
+        hours = 0
+        minutes = 0
+        seconds = 0.
+
+        parts = time.split(":")
+        match len(parts):
+            case 0:
+                pass
+            case 1:
+                seconds = float(parts[0])
+            case 2:
+                minutes, seconds = int(parts[0]), float(parts[1])
+            case 3:
+                hours, minutes, seconds = int(parts[0]), int(parts[1]), float(parts[2])
+            case _:
+                raise ValueError(f"Too many `:` for time string: {time!r}")
+
+        if carry:
+            return cls.carry(hours, minutes, seconds)
+
+        return hours, minutes, seconds
+
+    def as_type(self, other: TimeNum = 'seconds') -> float:
+        if other in SECONDS:
+            return self.hours * 3600 + self.minutes*60 + self.seconds
+        if other in MINUTES:
+            return self.hours * 60 + self.minutes + self.seconds / 60
+        if other in HOURS:
+            return self.hours + self.minutes / 60 + self.seconds / 3600
+        raise ValueError(f"other must be one of {', '.join(TIME_STR)!r}")
+
+    @classmethod
+    def from_any(cls, other: TimeLike | t.Self) -> t.Self:
+        if isinstance(other, (int, float)):
+            return cls(seconds=other)
+        elif isinstance(other, str):
+            return cls(other)
+        return other
+
+    def __add__(self, other: TimeLike | t.Self) -> t.Self:
+        other = self.from_any(other)
+
+        return type(self)(
+            hours=self.hours + other.hours,
+            minutes=self.minutes + other.minutes,
+            seconds=self.seconds + other.seconds)
+
+    def __sub__(self, other: TimeLike | t.Self) -> t.Self:
+        other = self.from_any(other)
+
+        return type(self)(
+            hours=self.hours - other.hours,
+            minutes=self.minutes - other.minutes,
+            seconds=self.seconds - other.seconds)
+
+    def __div__(self, other: TimeLike) -> t.Self:
+        if isinstance(other, str):
+            other = float(other)
+        seconds = self.as_type('seconds')
+
+        return type(self)(seconds=seconds / other)
+
+    def __mul__(self, other: TimeLike) -> t.Self:
+        if isinstance(other, str):
+            other = float(other)
+        seconds = self.as_type('seconds')
+
+        return type(self)(seconds=seconds * other)
+
+    def __str__(self) -> str:
+        if almost_int(self.seconds):
+            seconds = f"{self.seconds:02.0f}"
+        else:
+            seconds = f"{self.seconds:08.5f}"
+            while seconds[-1] == "0":
+                seconds = seconds[:-1]
+        return f"{self.hours:02d}:{self.minutes:02d}:{seconds}"
+
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}: {str(self)}>"
+
+
+def almost_int(value: float) -> bool:
+    # precision: 5
+    mod = abs(value % 1)
+    if mod <= 0.00001:
+        return True
+    if mod >= 0.99999:
+        return True
+    return False
+
+
+def interact() -> None:
+    import code, readline, rlcompleter  # noqa: E401, F401
+    readline.parse_and_bind('tab: complete')
+    local_vars = locals().copy()
+    global_vars = globals().copy()
+    global_vars.update(local_vars)
+    console = code.InteractiveConsole(global_vars)
+    console.push(r'T = Time')
+    console.push(r'print(*(_ for _ in dir() if not _.startswith("_")), sep="\n")')
+    console.interact()
+
+
+def main() -> None:
+    import sys
+    args = sys.argv[1:]
+    if args:
+        for idx, arg in enumerate(args):
+            if arg.lower() == 'now':
+                arg = now()
+            try:
+                time = Time(arg)
+            except Exception:
+                continue
+
+            args[idx] = str(time.as_type('s'))
+
+        print(Time(seconds=eval(' '.join(args))))
+    else:
+        interact()
+
+
+if __name__ == '__main__':
+    main()

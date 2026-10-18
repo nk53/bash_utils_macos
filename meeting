@@ -1,0 +1,30 @@
+#!/bin/bash
+
+url=$(
+python << END
+from urllib.parse import urlsplit
+
+url = urlsplit('$1')
+if url.netloc:
+    print(url.netloc)
+END
+)
+
+echo "Host URL: $1"
+echo "Meeting URL: $url"
+read -p "Is this correct? [y/N] " response
+
+if [[ "$response" != "y" && "$response" != "Y" ]]; then
+    echo "Aborting"
+    exit
+fi
+
+meeting_time=8:59:30
+read -p "Meeting time? [$meeting_time] " response
+
+if grep -qE '\W' <<< $response; then
+    meeting_time="$response"
+fi
+
+set -ex
+timer --meeting -t "$meeting_time"  && open "$1"

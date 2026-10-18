@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+import argparse
+from pathlib import Path
+
+
+def main() -> None:
+    def one_index(v: str) -> int:
+        intval = int(v)
+        if intval <= 0:
+            raise ValueError(f"Not a positive integer: {intval!r}")
+        return intval - 1
+
+    def touch_file(v: str) -> Path:
+        path = Path(v)
+        path.touch(mode=0o644)
+        return path
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('logfile', type=touch_file)
+    parser.add_argument('-s', '--show', action='store_true',
+                        help="Show resulting log file (default unless -r/entry given)")
+    parser.add_argument('-n', '--number', action='store_true',
+                        help="Number entries, starting from 1.")
+    parser.add_argument('-r', '--remove', metavar='ENTRY_NUM', type=one_index,
+                        nargs='+', help="Remove entry (default: add entry)")
+    parser.add_argument('entry', nargs='*')
+    args = parser.parse_args()
+
+    remove: list[int] = args.remove
+    number_entries: bool = args.number
+    logfile: Path = args.logfile
+    entries: list[str] = args.entry
+
+    write = remove or entries
+
+    with logfile.open('r+') as log_fh:
+        lines = [line for line in log_fh]
+
+        if remove:
+            for entry_num in reversed(sorted(remove)):
+                lines.pop(entry_num)
+        elif entries:
+            lines.extend(f"{entry}\n" for entry in entries)
+        elif number_entries:
+            # list with line numbers
+            n_lines = len(lines)
+            width = len(str(n_lines))
+            for line_no, line in enumerate(lines, start=1):
+                print(f"{line_no:{width}d} {line}", sep='', end='')
+        else:
+            # just list them
+            print(*lines, sep='', end='')
+
+        if write:
+            log_fh.writelines(lines)
+
+
+if __name__ == '__main__':
+    main()

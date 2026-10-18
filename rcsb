@@ -1,0 +1,14 @@
+#!/bin/bash
+
+base_url="https://files.rcsb.org/download"
+
+if [ -z "$@" ]; then
+    echo "Usage: $(basename $0) PDB_ID"
+    exit 1
+fi
+
+
+for pdb in $@; do
+    echo "$base_url/$pdb.cif"
+    curl -fLsSO "$base_url/$pdb.cif" || echo "$pdb failed"
+done

@@ -1,0 +1,188 @@
+#!/usr/bin/env python
+import argparse
+import io
+import os
+import typing as t
+import shlex
+import shutil
+import subprocess as sp
+import sys
+from pathlib import Path
+
+
+def run_shell(args: str, shell: str | None = None) -> t.Never:
+    """Execute a shell command, replacing the current process.
+
+    If omitted, the SHELL environment is used to execute the command. If
+    the environment has no SHELL, it defaults to "/bin/bash".
+
+    Example:
+        # equivalent to `$SHELL -c "cat myfile"`
+        run("cat", "myfile")
+    """
+    shell = shell or os.environ.get('SHELL', '/bin/bash')
+    os.execlp(shell, shell, "-c", args)
+
+
+def run_exec(prog: str, *args: str) -> t.Never:
+    """A wrapper for execlp because I can never remember which one is which."""
+    os.execlp(prog, *args)
+    assert False
+
+
+def input_or_exit(prompt: str) -> str:
+    """Same as input(), but exits gracefully if user types Ctrl-D or Ctrl-C."""
+    try:
+        return input(prompt)
+    except (EOFError, KeyboardInterrupt):
+        print()
+        sys.exit(1)
+
+
+def update_ssh_config() -> None:
+    HOME = os.environ['HOME']
+    config: dict[str, dict[str, str]] = {}
+    config_path = Path(HOME) / ".ssh/config"
+    tmp_path = Path(HOME) / ".ssh/.config.tmp"
+    bak_path = Path(HOME) / ".ssh/.config.bak"
+
+    host: str | None = None
+    options: dict[str, str] = {}
+
+    def check_phone(addr: str, retry=False) -> int:
+        args = ["ssh", "-o", "ConnectTimeout=2", f"ssh://{addr}:2222", "ls"]
+        # print("Trying connection with args:", args)
+        result = sp.run(args)
+
+        return result.returncode
+
+    def get_phone_ip(last_addr: str) -> str:
+        addr = input_or_exit(f"Phone's IP [{last_addr}]: ")
+        while check_phone(addr):
+            print("Can't connect to phone. Type new IP address, or <Enter> to retry.")
+            addr = input_or_exit(f"Phone's IP [{last_addr}]: ")
+            if not addr:
+                return last_addr
+        return addr
+
+    def write_config() -> None:
+        ssh_config: io.TextIOWrapper
+
+        def writeln(*args: t.Any) -> None:
+            print(*args, sep='\t', file=ssh_config)
+
+        def write_config_line(*, host: str | None = None,
+                              key: str | None = None,
+                              value: str | None = None) -> None:
+            nonlocal ssh_config
+
+            TABLEN: t.Final = 8
+            errmsg: t.Final = "host and (key, value) are mutually exclusive"
+
+            if host:
+                assert not key, errmsg
+                assert not value, errmsg
+                writeln('Host', host)
+            else:
+                assert key
+                assert value
+                assert not host, errmsg
+
+                pad = max(0, 16 - len(key))
+                if pad and pad % 8 == 0:
+                    pad -= 1
+                if pad:
+                    sep = ('',) * (pad // TABLEN)
+                    fields = ['', key, *sep, value]
+                else:
+                    fields = ['', ' '.join((key, value))]
+
+                writeln(*fields)
+
+        with tmp_path.open('w') as ssh_config:
+            for host, options in config.items():
+                write_config_line(host=host)
+                for key, value in options.items():
+                    write_config_line(key=key, value=value)
+
+        # backup original config
+        shutil.copy2(config_path, bak_path)
+
+        # copy permission flags to new config
+        shutil.copymode(config_path, tmp_path)
+
+        # replace old config with new config
+        os.rename(tmp_path, config_path)
+
+    with config_path.open() as ssh_config:
+        for line in ssh_config:
+            fields = line.strip().split()
+
+            if not fields:
+                continue
+
+            key = fields[0]
+            value = ' '.join(fields[1:])
+
+            if key.lower() == "host":
+                if host:
+                    config[host] = options
+                    options = {}
+                host = value
+
+                continue
+
+            # print(f"Setting {host}'s {key} to {value}")
+            options[key] = value
+
+    if host:
+        config[host] = options
+
+    # get updated phone info
+    phone_config = config['phone']
+    this_addr = phone_config['Hostname']
+    last_addr = phone_config.get('#Hostname')
+    if check_phone(this_addr):
+        # try previous setting
+        if last_addr and not check_phone(last_addr):
+            # print("Swapping last known addresses.")
+            phone_config['Hostname'] = last_addr
+            phone_config['#Hostname'] = this_addr
+
+            write_config()
+        else:
+            addr = get_phone_ip(this_addr)
+            if addr:
+                # use new address, save previous one under #Hostname
+                # print("Using new address")
+                phone_config['Hostname'] = addr
+                phone_config['#Hostname'] = this_addr
+
+                write_config()
+
+
+def main() -> t.Never:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-n', '--no-check', action='store_true')
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-c', '--scp', action='store_true', help="run scp")
+    group.add_argument('-s', '--ssh', action='store_true', help="run ssh")
+    parser.add_argument('args', nargs='*')
+
+    args = parser.parse_args()
+
+    if not args.no_check:
+        update_ssh_config()
+
+    prog = 'ssh' if args.ssh else 'scp'
+    unlexed_args = ' '.join(args.args)
+    lexed = ' '.join(shlex.split(unlexed_args))
+    cmd = f"{prog} {lexed}"
+
+    run_shell(cmd, shell='/bin/bash')
+
+    assert False
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,98 @@
+#!/usr/bin/env python
+"""Reference used: https://en.wikipedia.org/wiki/UTF-8"""
+import sys
+
+
+def ubyte(char: str) -> str:
+    return bytes(char, 'utf8').hex().upper()
+
+
+def ubytestr(b: bytes) -> str:
+    return 'U+' + b.hex().upper()
+
+
+def u1b(char: str) -> str:
+    """UTF-8 one-byte char"""
+    return 'U+' + ubyte(char)
+
+
+def u2b(char: str) -> str:
+    """UTF-8 two-byte char"""
+    lead = 0b11000000
+    pad = 0b10000000
+
+    bytestrs = bytes(char, 'utf8').hex(' ').split()
+    x, y, z = map(lambda n: int(n, base=16), bytestrs)
+    assert len(bin(x)) <= 5, x
+
+    x <<= 2
+    y1 = y >> 2
+    y2 = y << 4
+
+    return ubytestr(bytes(
+        [lead + x + y1,
+         pad + y2 + z]))
+
+
+def u3b(char: str) -> str:
+    """UTF-8 three-byte char"""
+    lead = 0b11100000
+    pad = 0b10000000
+
+    bytestrs = bytes(char, 'utf8').hex(' ').split()
+    w, x, y, z = map(lambda n: int(n, base=16), bytestrs)
+
+    x <<= 2
+    y1 = y >> 2
+    y2 = y << 4
+
+    return ubytestr(bytes(
+        [lead + w,
+         pad + x + y1,
+         pad + y2 + z]))
+
+
+def u4b(char: str) -> str:
+    """UTF-8 four-byte char"""
+    lead = 0b11110000
+    pad = 0b10000000
+
+    bytestrs = bytes(char, 'utf8').hex(' ').split()
+    u, v, w, x, y, z = map(lambda n: int(n, base=16), bytestrs)
+
+    assert len(bin(u)) <= 3, u
+
+    x <<= 2
+    y1 = y >> 2
+    y2 = y << 4
+    v1 = v >> 2
+    v2 = v << 4
+    u <<= 2
+
+    return ubytestr(bytes(
+        [lead + u + v1,
+         pad + v2 + w,
+         pad + x + y1,
+         pad + y2 + z]))
+
+
+def main(bytestr: str) -> str:
+    if len(bytestr) % 2:
+        bytestr = '0' + bytestr
+
+    # there is probably a more efficient way of grouping this in pairs
+    result = []
+    for pair in zip(*[iter(bytestr)]*2):
+        byte = int(''.join(pair), base=16)
+        result.append(byte)
+
+    as_bytes = bytes(result)
+
+    # TODO: translate raw bytes to utf code point U+UVWXYZ
+
+    return as_bytes.hex(' ').upper()
+
+
+if __name__ == '__main__':
+    for bytestr in sys.argv[1:]:
+        print(main(bytestr))

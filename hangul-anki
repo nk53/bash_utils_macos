@@ -1,0 +1,89 @@
+#!/bin/bash
+
+set -ex
+
+# say in Korean with the (currently) best available voice
+sayk() {
+    say -v 'Yuna (Premium)' "$@"
+}
+
+prependfn() {
+    if [ -z "$2" ]; then
+        echo usage: prependfn PREFIX PATH
+        return 1;
+    fi
+
+    local bn=$(basename "$2")
+    local dn=$(dirname "$2")
+    local prefix=$1
+
+    echo "$dn/${prefix}$bn"
+}
+
+# add 200 ms to beginning of clip
+padstart() {
+    padname=$(prependfn padded_ "$1")
+    ffmpeg -i "$1" -af "adelay=delays=200:all=true" "$padname" && \
+    mv "$padname" "$1"
+}
+
+# add 200 ms (0.2 s) to end of clip
+padend() {
+    padname=$(prependfn padded_ "$1")
+    ffmpeg -i "$1" -af "apad=pad_dur=0.2" "$padname" && \
+    mv "$padname" $1
+}
+
+# add 200 ms to start and end of clip (helps w/ AirPods)
+pad() {
+    padstart "$1"
+    padend "$1"
+}
+
+# where Anki looks for sound files
+anki_media="$HOME/Library/Application Support/Anki2/User 1/collection.media"
+
+# usage: hangul-anki [outfile.wav] text to convert
+# outfile MUST end with '.wav' or else it will be interpreted as input text
+if grep -qE '\.wav$' <<< $1; then
+    tmpwav=$1
+    tmpaiff=${tmpwav%.wav}.aiff
+    shift
+else
+    if [ -z "$1" ]; then
+        # set $1 to clipboard
+        set "$(pbpaste)"
+    fi
+
+    # convert hangul to romanized representation
+    romanized=$(hangul-romanize $@ | sed 's/ /_/g')
+
+    tmpaiff=$romanized.aiff
+    tmpwav=$romanized.wav
+fi
+
+outfile="$anki_media/$tmpwav"
+
+if [ -e "$tmpaiff" ]; then
+    echo "$tmpaiff exists. Remove it and retry to continue."
+    exit 1
+fi
+if [ -e "$tmpwav" ]; then
+    echo "$tmpwav exists. Remove it and retry to continue."
+    exit 1
+fi
+
+#  say doesn't know about .wav, so write as .aiff
+sayk -o "$tmpaiff" "$@"
+
+# Anki doesn't know about .aiff, so convert to .wav
+ffmpeg -i "$tmpaiff" "$tmpwav"
+
+pad "$tmpwav"
+mv "$tmpwav" "$outfile"
+pbcopy <<< '[sound:'$(basename $tmpwav)']'
+
+echo "Success"
+
+# play resulting file without GUI, then exit
+vlc --play-and-exit --intf dummy "$outfile" 2>/dev/null

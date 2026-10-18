@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+import argparse
+import sys
+import uuid
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Returns 0 only if all args are a valid UUID. "
+                    "Nonzero otherwise.")
+    parser.add_argument('arg', nargs='+', type=uuid.UUID)
+    parser.parse_args()
+
+
+if __name__ == '__main__':
+    main()

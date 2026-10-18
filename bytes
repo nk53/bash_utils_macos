@@ -1,0 +1,19 @@
+#!/usr/bin/env -S python -i
+
+kB = kB = 2**10     # kilobytes
+mB = MB = 2**20     # megabytes
+gB = GB = 2**30     # gigabytes
+tB = TB = 2**40     # terabytes
+
+kb = kb = 2**7      # kilobits
+mb = Mb = 2**17     # megabits
+gb = Gb = 2**27     # gigabits
+tb = Tb = 2**37     # terabits
+
+with open(__file__) as _src:
+    lines = _src.readlines()[2:]
+    for idx, line in enumerate(lines):
+        if line.startswith('with'):
+            break
+    lines = lines[:idx-1]
+    print(''.join(lines), end='')

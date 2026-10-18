@@ -1,0 +1,34 @@
+#!/bin/bash
+
+
+if [ -n "$1" ]; then
+    dest=$HOME/bin/$1
+    if [ ! -e $dest ]; then
+        echo "Creating $dest ..."
+        touch $dest
+        chmod +x $dest
+        if [ -n "$2" ]; then
+            echo '#!'$2 > $dest
+        fi
+    else
+        echo "$dest already exists"
+    fi
+    set -x
+    cat <<END >> $dest
+#!/usr/bin/env python
+
+
+def main() -> None:
+    pass
+
+
+if __name__ == '__main__':
+    main()
+END
+    edprog $1
+    exit 0
+fi
+
+pn=$(basename $0)
+echo "Usage: $pn new_program_name"
+exit 1

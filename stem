@@ -1,0 +1,14 @@
+#!/usr/bin/env python
+from argparse import ArgumentParser
+from pathlib import Path
+
+parser = ArgumentParser(description="Print stem of pathnames using pathlib")
+parser.add_argument('path', type=Path, help="filenames to convert",
+                    nargs='+')
+
+args = parser.parse_args()
+
+inpaths = args.path
+outpaths = ' '.join(map(lambda path: path.stem, inpaths))
+
+print(outpaths)

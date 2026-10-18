@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# stolen from:
+# https://gist.github.com/jdestefani/81f4f49fb6b616f39abdc13a1a76cadd
+
+# updated to handle changed inkscape CLI options
+
+# List all .emf files
+for emf_file in "$@"; do
+    # Extract filename
+    emf_filename="${emf_file%%.*}"
+    # Convert .emf to .svg and .svg to .eps using Inkscape
+    echo "inkscape $emf_file --export-plain-svg=$emf_filename.svg && inkscape $emf_filename.svg -E $emf_filename.eps"
+    inkscape $emf_file -o $emf_filename.svg && \
+        inkscape $emf_filename.svg -o $emf_filename.eps
+done

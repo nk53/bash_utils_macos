@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+import argparse
+import sys
+from collections import Counter
+from pathlib import Path
+
+parser = argparse.ArgumentParser(description="""
+    Generate a histogram of input lines.
+""")
+parser.add_argument('file', nargs='*', help="Files to read (default: stdin)")
+parser.add_argument('-r', '--reverse', action='store_true',
+                    help="Show counts in ascending order (default: descending)")
+parser.add_argument('-l', '--limit', metavar='NUM', default=None, type=int,
+                    help="Show only the first NUM lines")
+args = parser.parse_args()
+
+files = args.file or [sys.stdin]
+
+# check that all files exist
+for file in files:
+    if file is not sys.stdin:
+        if not Path(file).exists():
+            print(f"No such file: {file}", file=sys.stderr)
+
+counter: Counter[str] = Counter()
+for file in files:
+    with open(file) as file_handle:
+        counter.update(stripped for line in file_handle
+                       if (stripped := line.rstrip('\n')))
+
+if counter:
+    histogram = counter.most_common(args.limit)
+    max_count = histogram[0][1]
+
+    if args.reverse:
+        histogram = list(reversed(histogram))
+
+    w = len(str(max_count))
+
+    for line, count in histogram:
+        print(f"{count:{w}d} {line}")
+else:
+    print("Recieved no input, or only empty lines")

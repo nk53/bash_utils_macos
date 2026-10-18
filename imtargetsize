@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+from argparse import ArgumentParser
+from pathlib import Path
+from PIL import Image
+from typing import NamedTuple
+
+
+class LossTup(NamedTuple):
+    filename: str
+    x: int
+    y: int
+    size: int
+    loss: int
+
+
+def existing_path(v: str) -> Path:
+    path = Path(v)
+    if not path.exists():
+        raise FileNotFoundError(v)
+    return path
+
+
+parser = ArgumentParser()
+parser.add_argument('file', nargs='+', type=existing_path)
+args = parser.parse_args()
+
+target = 300 * 400  # target n-pixels
+fbase: dict[str, LossTup] = {}
+
+for path in args.file:
+    im = Image.open(path)
+
+    parts = path.stem.split('_')
+    name = '_'.join(parts[:-1])
+    idx = parts[-1]
+
+    x, y = im.size[:2]
+    n_pixels = x * y
+
+    loss = abs(n_pixels - target)
+    ltup = LossTup(path.name, x, y, n_pixels, loss)
+
+    fbase.setdefault(name, ltup)
+
+    if loss < fbase[name].loss:
+        fbase[name] = ltup
+
+for value in fbase.values():
+    print(value.filename)
