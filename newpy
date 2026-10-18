@@ -1,21 +1,30 @@
 #!/bin/bash
+# newpy — scaffold a python CLI: newpy [-d DIR] name [interpreter]
+set -u
 
+dir="$HOME/bin"
+while getopts d: opt; do
+    case $opt in
+        d) dir="$OPTARG" ;;
+        *) exit 1 ;;
+    esac
+done
+shift $((OPTIND - 1))
 
-if [ -n "$1" ]; then
-    dest=$HOME/bin/$1
-    if [ ! -e $dest ]; then
-        echo "Creating $dest ..."
-        touch $dest
-        chmod +x $dest
-        if [ -n "$2" ]; then
-            echo '#!'$2 > $dest
-        fi
-    else
-        echo "$dest already exists"
-    fi
-    set -x
-    cat <<END >> $dest
-#!/usr/bin/env python
+if [ -z "$1" ]; then
+    echo "Usage: $(basename "$0") [-d DIR] new_program_name [interpreter]"
+    exit 1
+fi
+
+dest="$dir/$1"
+if [ -e "$dest" ]; then
+    echo "$dest already exists"
+    exit 1
+fi
+
+echo "Creating $dest ..."
+printf '#!%s\n' "${2:-/usr/bin/env python3}" > "$dest"
+cat <<'END' >> "$dest"
 
 
 def main() -> None:
@@ -25,10 +34,6 @@ def main() -> None:
 if __name__ == '__main__':
     main()
 END
-    edprog $1
-    exit 0
-fi
+chmod +x "$dest"
 
-pn=$(basename $0)
-echo "Usage: $pn new_program_name"
-exit 1
+${EDITOR:-vim} "$dest"
