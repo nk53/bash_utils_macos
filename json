@@ -1,12 +1,369 @@
-#!/usr/bin/env python3
-import sys
+#!/usr/bin/env python3.12
+import argparse
+import io
 import json
+import pathlib
+import os
+import re
+import sys
+import typing as t
+from collections.abc import (
+    Callable,
+    Hashable,
+    Iterable,
+)
 
-with open(sys.argv[1]) as fh:
-    obj = json.load(fh)
+type JSONContainer[K: str | tuple[str], V] = dict[K, V] | list[V]
+type Dict2Dict[K, V] = Callable[[dict[K, V]], tuple[dict[K, V], bool]]
+type Dict2Val[K, V] = Callable[[dict[K, V]], tuple[V, bool]]
+type List2List[V] = Callable[[list[V]], tuple[list[V], bool]]
+type List2Val[V] = Callable[[list[V]], tuple[V, bool]]
+type DictGetter[K, V] = Dict2Dict[K, V] | Dict2Val[K, V]
+type ListGetter[T] = List2List[T] | List2Val[T]
+type JSONGetter[K: Hashable, V] = DictGetter[K, V] | ListGetter[V]
 
-print(obj)
+type LitFalse = t.Literal[False]
+type LitTrue = t.Literal[True]
 
-import code, readline, rlcompleter
-readline.parse_and_bind('tab: complete')
-code.InteractiveConsole(locals()).interact()
+type FilterArgs = JSONContainer | io.TextIOWrapper | str
+type FilterFunc = Callable[[JSONContainer | io.TextIOWrapper | str], t.Any]
+
+KEY_RE = re.compile("^\"([^\"]*)\"]|^\'([^\']*)\'|^[^.]+")
+SLICE_RE = re.compile(r'(?P<start>\d*):(?P<stop>\d*)(?P<step>:\d+)')
+
+MAXLEN: t.Final = 76
+INDENT: t.Final = 4
+INDENT_STR: t.Final = " " * INDENT
+
+
+def reopen_stdin() -> None:
+    if sys.stdin.closed:
+        sys.stdin = open(os.ctermid())
+
+
+def load_lines(file: io.TextIOWrapper) -> list[object]:
+    with file:
+        return [json.loads(line) for line in file]
+
+
+def do_leaves(obj: t.Any, func: Callable[[t.Any], t.Any | None]) -> None:
+    """Apply `func` to all leaf nodes in obj"""
+    def _recurse(obj: t.Any) -> None:
+        if isinstance(obj, list):
+            for item in obj:
+                _recurse(item)
+        elif isinstance(obj, dict):
+            for key, value in obj.items():
+                _recurse(value)
+        else:
+            func(obj)
+    _recurse(obj)
+
+
+def load_json(filename: str, loader: Callable) -> object:
+    with open(filename) as fh:
+        obj = loader(fh)
+    return obj
+
+
+def indent(text: str) -> str:
+    return '\n'.join(f"{INDENT_STR}{line}" for line in text.splitlines())
+
+
+def repr_obj(obj: object, maxlen: int = MAXLEN, level: int = 0) -> str:
+    def irepr(obj: object) -> str:
+        return indent(repr_obj(obj, maxlen - INDENT, level+1))
+    # first try all inline
+    str_repr = json.dumps(obj)
+    if len(str_repr) <= maxlen:
+        return str_repr
+
+    reprs: list[str] = []
+    if isinstance(obj, list):
+        for item in obj:
+            if isinstance(item, dict):
+                str_rep = indent(f"{{\n{irepr(item)}\n}}")
+                reprs.append(str_rep)
+            else:
+                reprs.append(irepr(item))
+        str_repr = ',\n'.join(reprs)
+        if len(str_repr) <= maxlen:
+            return f"[ {str_repr} ]"
+        str_repr = f"[\n{str_repr}\n]"
+        if level:
+            str_repr = indent(str_repr)
+
+    elif isinstance(obj, dict):
+        for k, v in obj.items():
+            # try to inline k: {v}
+            kstr = json.dumps(k)
+            # newmaxlen = maxlen - len(kstr) - 3  # 3 for {},
+            str_repr = f"{kstr}: {repr_obj(v, maxlen, level+1)}"
+            if len(str_repr) > maxlen:
+                str_repr = f"{repr_obj(k, maxlen-3, level+1)}: {{\n{irepr(v)}\n}}"
+            reprs.append(str_repr)
+        str_repr = ',\n'.join(reprs)
+    else:  # not much to do here
+        pass
+
+    return str_repr
+
+
+def interact(obj: t.Any) -> None:
+    print(obj)
+
+    reopen_stdin()
+
+    import code, readline, rlcompleter  # noqa: E401, F401
+
+    readline.parse_and_bind('tab: complete')
+    code.InteractiveConsole(locals()).interact()
+
+
+def str_to_keys[K: str | tuple[str, ...], V](key: str) -> list[JSONGetter[K, V]]:
+    """Getters return (value, True) if key is a slice, (value, False) otherwise"""
+    key_funcs: list[JSONGetter[K, V]] = []
+
+    def _dict_slicer(key: tuple[K, ...]) -> Dict2Dict[K, V]:
+        def getter(obj: dict[K, V]) -> tuple[dict[K, V], LitTrue]:
+            return {k: v for k, v in obj.items() if k in key}, True
+        return getter
+
+    def _dict_getter(key: K) -> Dict2Val[K, V]:
+        def getter(obj: dict[K, V]) -> tuple[V, LitFalse]:
+            return obj[key], False
+        assert False
+
+    def _list_slicer(key: slice) -> List2List[V]:
+        def getter(seq: list[V]) -> tuple[list[V], LitTrue]:
+            return seq[key], True
+        return getter
+
+    def _slicer(key: tuple[K, ...] | slice) -> Dict2Dict[K, V] | List2List[V]:
+        if isinstance(key, tuple):
+            return _dict_slicer(key)
+        return _list_slicer(key)
+
+    def _getter(key: str | t.SupportsIndex) -> List2Val[V] | Dict2Val[K, V]:
+        def getter(seq: list[V] | dict[K, V]) -> tuple[V, LitFalse]:
+            if isinstance(seq, list):
+                return seq[int(key)], False
+            return seq[t.cast(K, key)], False
+        return getter
+
+    def _all_slicer[T](seq: T) -> tuple[T, LitTrue]:
+        return seq, True
+
+    while key:
+        if (match := KEY_RE.search(key)) is not None:
+            next_key = key[slice(*match.span())]
+            key = key[slice(match.end()+1, None)]
+
+            if next_key in ('*', ':'):
+                key_funcs.append(_all_slicer)
+            elif slice_match := SLICE_RE.match(next_key):
+                start, stop, step = slice_match.groups()
+                start = start and int(start)
+                stop = stop and int(stop)
+                step = step and int(step[1:])
+                key_funcs.append(_slicer(slice(start, stop, step)))
+            elif ',' in next_key:  # a bit naive since it doesn't allow literal ',' in a key
+                named_keys = t.cast(tuple[K, ...], tuple(next_key.split(',')))
+                key_funcs.append(_slicer(named_keys))
+            else:  # regular index
+                key_funcs.append(_getter(next_key))
+
+    return key_funcs
+
+
+def get_items[K: str | tuple[str], V](
+    getters: list[JSONGetter[K, V]],
+    obj: JSONContainer[K, V],
+    # pos: int = 0,
+) -> JSONContainer[K, V] | V:
+
+    def _get_items(obj: JSONContainer[K, V] | V,
+                   pos: int) -> JSONContainer[K, V] | V:
+        result: dict[K, V] | list[V] | V
+
+        if pos >= len(getters):
+            return obj
+
+        getter = getters[pos]
+        if isinstance(obj, dict):
+            getter = t.cast(DictGetter[K, V], getter)
+            result, is_slice = getter(obj)
+            if is_slice:
+                assert isinstance(result, dict)
+                result = t.cast(dict[K, V], result)
+                return {k: t.cast(V, _get_items(v, pos+1))
+                        for k, v in result.items()}
+            # return t.cast(V, result)
+            return _get_items(result, pos+1)
+        else:  # list or a str; but we want typer to ignore the str case
+            getter = t.cast(ListGetter[V], getter)
+            obj = t.cast(list[V], obj)
+            result, is_slice = getter(obj)
+            if is_slice and isinstance(result, list):
+                # return t.cast(list[V], result)
+                return [_get_items(item, pos+1) for item in result]  # type: ignore[misc]
+            # return t.cast(V, result)
+            return _get_items(result, pos+1)
+
+    if getters:
+        return _get_items(obj, pos=0)
+
+    return obj
+
+
+def get_filter(key: str | list[JSONGetter]) -> FilterFunc:
+    if isinstance(key, str):
+        key = str_to_keys(key)
+    elif isinstance(key, list):
+        assert all(callable(k) for k in key), "Invalid key"
+
+    def _filter(obj: FilterArgs) -> t.Any:
+        """If obj is str, it is assumed to be a filename"""
+        if isinstance(obj, str):
+            obj = t.cast(JSONContainer, load_json(obj, json.load))
+        elif hasattr(obj, 'read'):  # treat like an open file obj
+            obj = json.load(obj)
+        obj = t.cast(JSONContainer, obj)
+
+        return get_items(key, obj)
+
+    return _filter
+
+
+def filter_obj(key: str | list[JSONGetter], *objs: FilterArgs) -> t.Any:
+    obj_filter = get_filter(key)
+    if len(objs) == 1:
+        return obj_filter(objs[0])
+    return [obj_filter(obj) for obj in objs]
+
+
+def get_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('filename', nargs='*', default=[sys.stdin])
+    parser.add_argument('-k', '--key', action='append')
+    parser.add_argument('-i', '--interact', action='store_true')
+    parser.add_argument('--inplace', action='store_true', help="edit file in-place")
+    parser.add_argument('-s', '--show-keys-only', action='store_true')
+    parser.add_argument('-j', '--parse-json', action='store_true',
+                        help="Parse result as a JSON string")
+    parser.add_argument('-d', '--force-dict', action='store_true',
+                        help="If result is a list, conver to dict with int keys")
+    parser.add_argument('-p', '--parse-python', action='store_true',
+                        help="Parse result as a Python string")
+    parser.add_argument('-w', '--width', metavar="WIDTH", type=int, default=0,
+                        help="Try to compact entries to WIDTH")
+    parser.add_argument('-l', '--list', action='store_true',
+                        help="Treat each line of input as the next item in a list")
+    parser.add_argument('-c', '--command', help="Run a command on the result. "
+                        "Result is available as `obj`")
+
+    args = parser.parse_args()
+    return args
+
+
+def main() -> None:
+    args = get_args()
+
+    loader = load_lines if args.list else json.load
+
+    objs: Iterable
+    if args.filename and (stdin := args.filename[0]) is sys.stdin:
+        objs = [loader(stdin)]
+    else:
+        paths = [pathlib.Path(file) for file in args.filename]
+        bad_paths = list(filter(lambda p: not p.exists(), paths))
+
+        if bad_paths:
+            bad_files = ', '.join(p.name for p in bad_paths)
+            print("No such file:", bad_files, file=sys.stderr)
+            sys.exit(1)
+
+        objs = [load_json(file, loader) for file in args.filename]
+
+    if keys := args.key:
+        keys = [str_to_keys(k) for k in args.key]
+        for obj in objs:
+            if not isinstance(obj, (list, dict)):
+                print("Object not iterable:", obj, file=sys.stderr)
+                sys.exit(1)
+        new_objs: list = []
+        for obj in objs:
+            obj = [get_items(key, obj) for key in keys]
+            if len(obj) > 1:
+                # obj = {k: v for (k, v) in zip(keys, obj)}
+                obj = dict(zip(keys, obj))
+            elif obj:
+                obj = obj[0]
+            new_objs.append(obj)
+
+        objs = new_objs
+
+    objs = t.cast(list[list | dict], objs)
+
+    if args.force_dict:
+        new_objs = []
+        for obj in objs:
+            if isinstance(obj, list):
+                obj = {idx: value for idx, value in enumerate(obj)}
+            new_objs.append(obj)
+        objs = new_objs
+
+    if args.interact:
+        n_objs = len(objs)
+        if not n_objs:
+            return
+        if n_objs == 1:
+            interact(objs[0])
+        else:
+            interact(objs)
+        return
+
+    def display(obj: t.Any, filename: str) -> None:
+        if args.show_keys_only:
+            if isinstance(obj, list) and obj:
+                obj = '-'.join(('0', str(len(obj)-1)))
+                obj = f"list[{obj}]"
+            elif isinstance(obj, dict) and obj:
+                obj = {'object with keys': list(obj.keys())}
+        elif args.parse_json:
+            if isinstance(obj, str):
+                obj = json.loads(obj)
+            elif isinstance(obj, list):
+                obj = [json.loads(x) for x in obj]
+            else:  # dict
+                obj = {k: json.loads(v) for k, v in obj.items()}
+
+        ofile = (pathlib.Path(filename)).open('w') if args.inplace else sys.stdout
+
+        if args.parse_python:
+            do_leaves(obj, lambda x: print(x, file=ofile))
+        elif args.command:
+            eval(args.command)
+        elif args.width:
+            print(repr_obj(obj, args.width), file=ofile)
+        else:
+            print(json.dumps(obj, indent=4), file=ofile)
+
+        if ofile is not sys.stdout:
+            ofile.close()
+
+    it = zip(args.filename, objs)
+    for filename, obj in it:
+        if len(args.filename) > 1:
+            print("File:", filename)
+        display(obj, filename=filename)
+        break
+
+    for filename, obj in it:
+        print('='*76)
+        print("File:", filename)
+        display(obj, filename=filename)
+
+
+if __name__ == '__main__':
+    main()
