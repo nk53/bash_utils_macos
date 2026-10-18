@@ -33,7 +33,7 @@ def format_time(nsecs):
 # setup parser
 helpmsg = "Sets a timer, with an optional custom or canned message"
 parser = argparse.ArgumentParser(description=helpmsg)
-parser.add_argument('-s', '--show-timer', action="store_true",
+parser.add_argument('-s', '--show-timer', action="store_false",
         help="Whether to show the current time remaining")
 parser.add_argument('-m', type=str, metavar="message",
     help="custom message to print instead of default")

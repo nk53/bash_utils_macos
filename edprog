@@ -6,7 +6,7 @@ prog="$HOME/bin/$1"
 
 echo "Attempting to edit $prog ..."
 if [ -e "$prog" ]; then
-    vim $prog
+    ${EDITOR:-vim} $prog
     exit 0
 fi
 

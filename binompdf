@@ -3,7 +3,7 @@ import argparse
 from math import factorial as fact
 
 def n_choose_k(n, k):
-    n, k = map(float, (n, k))
+    n, k = map(int, (n, k))
     return fact(n) / (fact(k) * fact(n - k))
 
 def eval_expr(func, expr):

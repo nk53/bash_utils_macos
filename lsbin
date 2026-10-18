@@ -7,7 +7,7 @@
 cd $HOME/bin
 
 if [ -n "$1" ]; then
-    ls *$1*
+    ls --color *$1*
 else
-    ls
+    ls --color
 fi

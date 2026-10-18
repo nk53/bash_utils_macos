@@ -15,7 +15,7 @@ fi
 header_name=/usr/local/include/$1
 
 if [ -e "$header_name" ]; then
-    vim -R $header_name
+    ${EDITOR:-vim} -R $header_name
 else
     echo "Error: $header_name does not exist"
     exit 2
